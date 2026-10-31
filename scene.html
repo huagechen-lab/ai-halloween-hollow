@@ -2428,6 +2428,11 @@ function setHudHidden(on) {
     hideBubble();
     if (toastEl) toastEl.classList.remove('show');
   }
+  try {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: 'bw-hud', hidden: hudHidden }, '*');
+    }
+  } catch (e) { /* host may not accept messages */ }
 }
 /* ── procedural background music (WebAudio, no assets) ───── */
 const MUSIC_BPM = 68;

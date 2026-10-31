@@ -83,6 +83,7 @@
     -webkit-backdrop-filter: blur(12px) saturate(1.1);
     box-shadow: 0 8px 28px rgba(0,0,0,.35);
     font-size: 12px; line-height: 1; white-space: nowrap; pointer-events: none;
+    transition: opacity .3s ease, visibility .3s ease;
   }
   .promo a {
     pointer-events: auto; display: inline-flex; align-items: center; gap: 5px;
@@ -90,6 +91,11 @@
     letter-spacing: .04em; transition: transform .18s, background .18s, border-color .18s;
   }
   .promo a:hover { transform: translateY(-1px); }
+  body.hud-out .promo,
+  body.hud-out .kbd-hint,
+  body.hud-out .credit {
+    opacity: 0 !important; visibility: hidden !important; pointer-events: none !important;
+  }
   .lang {
     pointer-events: auto; display: inline-flex; align-items: center; justify-content: center;
     min-width: 34px; height: 30px; padding: 0 8px; border-radius: 999px;
@@ -113,6 +119,7 @@
     font: 600 11px/1 var(--sans, -apple-system, BlinkMacSystemFont, "PingFang SC", system-ui, sans-serif);
     letter-spacing: .08em; cursor: pointer; backdrop-filter: blur(12px);
     box-shadow: 0 8px 24px rgba(0,0,0,.35);
+    transition: opacity .3s ease, visibility .3s ease;
   }
   .kbd-hint::before {
     content: ""; width: 7px; height: 7px; border-radius: 50%;
@@ -126,6 +133,7 @@
     position: fixed; bottom: 5px; left: 50%; transform: translateX(-50%); z-index: 9;
     margin: 0; font-size: 8.5px; letter-spacing: .12em; color: rgba(226,214,168,.52);
     text-shadow: 0 1px 8px rgba(0,0,0,.55); pointer-events: none; white-space: nowrap;
+    transition: opacity .3s ease, visibility .3s ease;
   }
   .credit a { pointer-events: auto; color: inherit; }
 
@@ -243,12 +251,16 @@
   setUI();
   if (frame) {
     frame.src = frame.getAttribute('data-src') + '?lang=' + (lang() === 'en' ? 'en' : 'zh');
-    frame.addEventListener('load', function () { setTimeout(ready, 700); sendLang(); });
+    frame.addEventListener('load', function () { document.body.classList.remove('hud-out'); setTimeout(ready, 700); sendLang(); });
     setTimeout(ready, 6000);
     function syncHint() { if (hint) hint.hidden = document.activeElement === frame; }
     if (hint) hint.addEventListener('click', function () { frame.focus(); syncHint(); });
     window.addEventListener('blur', function () { setTimeout(syncHint, 0); });
     window.addEventListener('focus', syncHint);
+    window.addEventListener('message', (e) => {
+      if (e.source !== frame.contentWindow || !e.data || e.data.type !== 'bw-hud') return;
+      document.body.classList.toggle('hud-out', !!e.data.hidden);
+    });
     setInterval(syncHint, 800);
     syncHint();
   }
