@@ -15,6 +15,7 @@ A standalone, interactive 3D Halloween hollow you can open in the browser.
 - Character group: Camera / TIBO / Potato Sister. As a mascot, arrows/WASD walk; walk near the eight AI lanterns to collect sigils (gold diamonds)
 - Reset: press `E` near the giant button, press `R` anywhere, click/tap the red dome, or use the **RESET** button in the control panel. Collect all 8 sigils first for the full "reset all" finale
 - Hide HUD: use the **Hide HUD / 隐藏 HUD** button at the top-right; it stays visible and becomes **Show HUD** so you can bring the interface back. Nothing auto-restores it
+- Mobile: select TIBO or Potato Sister, then tap the ground to walk (a gold ring marks the target); drag to orbit, pinch to zoom. Double-tap camera reset is disabled on touch so repeated taps keep walking; use the view presets instead. On very small screens, hide the HUD first for more room
 - Chinese / English UI: auto-detected from the browser, toggle in the top bar or scene HUD; `?lang=zh` / `?lang=en` override
 
 ## What it is

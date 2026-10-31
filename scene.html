@@ -2267,6 +2267,14 @@ shockwave.position.set(RESET_PROP.x, groundH(RESET_PROP.x, RESET_PROP.z) + 0.12,
 shockwave.visible = false;
 scene.add(shockwave);
 
+/* touch-to-walk target marker */
+const walkMarkerMat = new THREE.MeshBasicMaterial({ color: '#ffcf7a', transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false });
+const walkMarker = new THREE.Mesh(new THREE.RingGeometry(0.34, 0.48, 32), walkMarkerMat);
+walkMarker.rotation.x = -Math.PI / 2;
+walkMarker.visible = false;
+scene.add(walkMarker);
+let walkTarget = null;
+
 const LABELS = {
   zh: {
     time: { day: '日间', sunset: '黄昏', night: '夜晚' },
@@ -2323,8 +2331,8 @@ const BUBBLES = {
 
 const BUBBLES_MOBILE = {
   zh: {
-    tiboIntro: '我是 TIBO。集齐 8 枚灯印，按大按钮。',
-    potatoIntro: '土豆姐：沿灯阵收回 8 枚灯印。',
+    tiboIntro: '我是 TIBO。点地面移动，集齐 8 枚灯印按大按钮。',
+    potatoIntro: '土豆姐：点地面走动，收回 8 枚灯印。',
     collect0: '灯印 +1。继续。',
     collect1: '额度回充中。',
     collect2: '下一盏在等你。',
@@ -2335,8 +2343,8 @@ const BUBBLES_MOBILE = {
     far: '走近按钮再按 E。',
   },
   en: {
-    tiboIntro: 'TIBO here. Collect 8 sigils, then hit the big button.',
-    potatoIntro: 'Potato: walk the lane for 8 sigils.',
+    tiboIntro: 'TIBO here. Tap the ground to walk; collect 8 sigils, then hit the big button.',
+    potatoIntro: 'Potato: tap the ground to walk; bring back 8 sigils.',
     collect0: 'Sigil +1. Keep going.',
     collect1: 'Quota recharging.',
     collect2: 'Next lantern awaits.',
@@ -2565,11 +2573,12 @@ function speak(key) {
 }
 function hideBubble() {
   bubbleKey = null;
+  bubbleUntil = 0;
   bubbleMat.opacity = 0;
   bubbleSprite.visible = false;
 }
 function updateBubble(dt) {
-  if (avatarKey === 'camera' || godOn) { bubbleSprite.visible = false; return; }
+  if (avatarKey === 'camera' || godOn || hudHidden) { bubbleSprite.visible = false; return; }
   const g = actorGroup();
   const h = avatarKey === 'tibo' ? (IS_MOBILE ? 3.45 : 3.05) : (IS_MOBILE ? 2.75 : 2.32);
   bubbleSprite.position.set(g.position.x, groundH(g.position.x, g.position.z) + h, g.position.z);
@@ -2687,6 +2696,7 @@ function pressResetButton() {
 
 function setAvatar(key) {
   if (!['camera', 'tibo', 'potato'].includes(key) || key === avatarKey) return;
+  clearWalkTarget();
   if (key !== 'camera' && avatarKey === 'camera') {
     savedAvatarCam.pos.copy(camera.position);
     savedAvatarCam.yaw = yaw; savedAvatarCam.pitch = pitch; savedAvatarCam.fov = fov;
@@ -2736,19 +2746,52 @@ function setAvatar(key) {
   syncAvatarButtons();
   speak(key === 'tibo' ? 'tiboIntro' : 'potatoIntro');
   collectArmed = false;
+  clearWalkTarget();
   wasNearProp = Math.hypot(g.position.x - RESET_PROP.x, g.position.z - RESET_PROP.z) < 3.0;
+}
+function setWalkTarget(x, z) {
+  let dx = x, dz = z + 12;
+  const rad = Math.hypot(dx, dz);
+  if (rad > 19.5) {
+    x = dx * (19.5 / rad);
+    z = -12 + dz * (19.5 / rad);
+  }
+  walkTarget = { x, z };
+  walkMarker.position.set(x, groundH(x, z) + 0.06, z);
+  walkMarker.scale.setScalar(1);
+  walkMarkerMat.opacity = 0.8;
+  walkMarker.visible = true;
+}
+function clearWalkTarget() {
+  walkTarget = null;
+  walkMarker.visible = false;
 }
 function stepAvatar(dt) {
   const g = actorGroup();
   const f = (held.up ? 1 : 0) - (held.down ? 1 : 0);
   const r = (held.right ? 1 : 0) - (held.left ? 1 : 0);
+  let dx = 0, dz = 0;
   if (f || r) {
     collectArmed = true;
+    clearWalkTarget();
     const fx = -Math.sin(camYaw), fz = -Math.cos(camYaw);
     const rx = Math.cos(camYaw), rz = -Math.sin(camYaw);
-    let dx = fx * f + rx * r, dz = fz * f + rz * r;
+    dx = fx * f + rx * r;
+    dz = fz * f + rz * r;
     const len = Math.hypot(dx, dz) || 1;
     dx /= len; dz /= len;
+  } else if (walkTarget) {
+    const wx = walkTarget.x - g.position.x;
+    const wz = walkTarget.z - g.position.z;
+    const d = Math.hypot(wx, wz);
+    if (d < 0.35) {
+      clearWalkTarget();
+    } else {
+      dx = wx / d; dz = wz / d;
+      collectArmed = true;
+    }
+  }
+  if (dx || dz) {
     const step = 3.8 * dt;
     let nx = g.position.x + dx * step;
     let nz = g.position.z + dz * step;
@@ -2757,15 +2800,22 @@ function stepAvatar(dt) {
       nx *= 20 / rad;
       nz = -12 + (nz + 12) * (20 / rad);
     }
+    let blocked = false;
     if (pondFactor(nx, nz) > 0.04 || Math.hypot(nx + 6.6, nz + 25.6) < 4.6 || Math.hypot(nx - RESET_PROP.x, nz - RESET_PROP.z) < RESET_PROP.r) {
       nx = g.position.x; nz = g.position.z;
+      blocked = true;
     }
     g.position.x = nx;
     g.position.z = nz;
     g.position.y = groundH(nx, nz) + Math.abs(Math.sin(elapsed * 9)) * 0.05;
     g.rotation.y += wrapAngle(Math.atan2(dx, dz) - g.rotation.y) * Math.min(1, dt * 10);
+    if (blocked && walkTarget) clearWalkTarget();
   } else {
     g.position.y = groundH(g.position.x, g.position.z);
+  }
+  if (walkTarget && walkMarker.visible) {
+    walkMarker.scale.setScalar(1 + Math.sin(elapsed * 5) * 0.08);
+    walkMarkerMat.opacity = 0.55 + Math.sin(elapsed * 5) * 0.2;
   }
 }
 function updateAvatarCamera(dt) {
@@ -2806,6 +2856,7 @@ function savedQuaternion() {
   return quatLookingAt(saved.pos, saved.pos.clone().add(dir));
 }
 function toggleGod() {
+  clearWalkTarget();
   if (!godOn) {
     flight = null;
     saved.pos.copy(camera.position);
@@ -2916,6 +2967,7 @@ let burstTimer = 0;
 const held = { up: false, down: false, left: false, right: false };
 const raycaster = new THREE.Raycaster();
 const ndc = new THREE.Vector2();
+const walkPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
 function requestBurst() {
   clearTimeout(burstTimer);
@@ -2926,6 +2978,16 @@ function hitResetButton(e) {
   ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
   raycaster.setFromCamera(ndc, camera);
   return raycaster.intersectObject(resetPropDome, false).length > 0;
+}
+function walkTargetFromPointer(e) {
+  if (!IS_MOBILE || avatarKey === 'camera' || godOn || flight) return false;
+  const r = canvas.getBoundingClientRect();
+  ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  raycaster.setFromCamera(ndc, camera);
+  const p = new THREE.Vector3();
+  if (!raycaster.ray.intersectPlane(walkPlane, p)) return false;
+  setWalkTarget(p.x, p.z);
+  return true;
 }
 function resetView() {
   setOrbit(false);
@@ -2982,14 +3044,19 @@ function endPointer(e) {
   if (pointers.size === 0) {
     if (single && dragMoved < 7 && !godOn && !flight) {
       if (hitResetButton(e)) triggerReset('click');
-      else requestBurst();
+      else if (!walkTargetFromPointer(e)) requestBurst();
     }
     dragging = false;
   }
 }
 canvas.addEventListener('pointerup', endPointer);
 canvas.addEventListener('pointercancel', endPointer);
-canvas.addEventListener('dblclick', (e) => { e.preventDefault(); resetView(); });
+canvas.addEventListener('dblclick', (e) => {
+  e.preventDefault();
+  // touch double-taps belong to walking; mobile reset uses view presets
+  if (IS_MOBILE) return;
+  resetView();
+});
 canvas.addEventListener('wheel', (e) => {
   e.preventDefault();
   targetFov = clamp(targetFov + Math.sign(e.deltaY) * 3.2, 34, 74);
@@ -3104,6 +3171,12 @@ window.__bw = {
   get hud() { return hudHidden; },
   setHudHidden,
   toggleHud() { setHudHidden(!hudHidden); },
+  get walkTarget() { return walkTarget ? { x: +walkTarget.x.toFixed(2), z: +walkTarget.z.toFixed(2) } : null; },
+  project(x, z, y = 0) {
+    const v = new THREE.Vector3(x, y, z);
+    v.project(camera);
+    return [+((v.x * 0.5 + 0.5) * canvas.clientWidth).toFixed(1), +((-v.y * 0.5 + 0.5) * canvas.clientHeight).toFixed(1)];
+  },
   get quest() { return { sigils: quest.sigils, resets: quest.resets, ready: quest.ready, ritual: ritual.active }; },
   lanterns() { return lanternMarks.map((m) => ({ x: +m.x.toFixed(2), z: +m.z.toFixed(2), lit: m.lit })); },
   resetScreen() {
