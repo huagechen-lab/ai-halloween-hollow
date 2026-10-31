@@ -185,6 +185,17 @@
     font: 8px/1.4 var(--sans); letter-spacing: .1em; color: rgba(255, 255, 255, .48);
     text-align: right; max-width: 172px;
   }
+  .audio-btn {
+    flex: none; align-self: center; width: 24px; height: 24px; padding: 0;
+    display: grid; place-items: center;
+    border: 1px solid rgba(244, 240, 230, .26); border-radius: 50%;
+    background: rgba(244, 240, 230, .06); color: rgba(244, 240, 230, .72);
+    font: 600 13px/1 var(--sans); cursor: pointer;
+    transition: background .25s, border-color .25s, color .25s;
+  }
+  .audio-btn:hover { background: rgba(244, 240, 230, .16); color: #fff; border-color: rgba(233, 211, 164, .6); }
+  .audio-btn[aria-pressed="true"] { background: rgba(233, 211, 164, .9); color: #16201f; border-color: rgba(233, 211, 164, .9); }
+  .audio-btn:focus-visible { outline: 2px solid rgba(233, 211, 164, .9); outline-offset: 2px; }
   .group { display: flex; flex-direction: column; gap: 7px; }
   .group-head {
     display: flex; justify-content: space-between; align-items: baseline;
@@ -329,6 +340,7 @@
     .seg.five button { font-size: 9px; padding: 7px 1px; }
     .sigil-line { font-size: 8px; }
     .reset-btn { font-size: 8px; padding: 4px 6px; letter-spacing: .1em; }
+    .audio-btn { width: 22px; height: 22px; font-size: 12px; }
     .rule { margin: 9px 0; }
     .hint { display: none; }
     .orbit-row { margin-top: 10px; }
@@ -390,6 +402,7 @@
   <div class="panel-head">
     <span class="p-title"><span class="lang-zh">AI 雾谷</span><span class="lang-en">AI Hollow</span></span>
     <span class="p-coord"><span class="lang-zh">8 家 AI · 9 盏灯 · 雾 0.6km</span><span class="lang-en">8 models · 9 lanterns · fog 0.6 km</span></span>
+    <button class="audio-btn" id="audioToggle" type="button" aria-pressed="false" aria-label="背景音乐" title="背景音乐 / Background music">♪</button>
   </div>
 
   <div class="group">
@@ -2284,6 +2297,7 @@ const LABELS = {
     god: '上帝视角', back: '返回原位', lang: 'EN',
     hudHide: '隐藏 HUD', hudShow: '显示 HUD',
     hudHideAria: '隐藏界面', hudShowAria: '显示界面',
+    music: '背景音乐',
     title: 'AI 万圣夜 · 雾谷灯阵',
     canvas: 'AI 万圣夜：可环视的 AI 万圣夜三维场景',
     panel: '场景预设', godAria: '升空俯瞰南瓜谷与老宅', backAria: '返回原机位',
@@ -2296,6 +2310,7 @@ const LABELS = {
     god: 'God view', back: 'Back to view', lang: 'ZH',
     hudHide: 'Hide HUD', hudShow: 'Show HUD',
     hudHideAria: 'Hide interface', hudShowAria: 'Show interface',
+    music: 'Background music',
     title: 'AI Halloween · Lantern Hollow',
     canvas: 'AI Halloween: an orbitable AI Halloween scene',
     panel: 'Scene presets', godAria: 'Rise above the hollow', backAria: 'Return to camera',
@@ -2363,6 +2378,7 @@ const statusWeather = $('#statusWeather');
 const godBtn = $('#godBtn');
 const langBtn = $('#langBtn');
 const hudBtn = $('#hudToggle');
+const audioBtn = $('#audioToggle');
 const orbitBtn = $('#orbitToggle');
 const panelEl = $('.panel');
 const sigilLine = $('#sigilLine');
@@ -2413,6 +2429,192 @@ function setHudHidden(on) {
     if (toastEl) toastEl.classList.remove('show');
   }
 }
+/* ── procedural background music (WebAudio, no assets) ───── */
+const MUSIC_BPM = 68;
+const MUSIC_STEP = 60 / MUSIC_BPM / 2;
+const MUSIC_CHORDS = [
+  { root: 45, triad: [57, 60, 64] }, // Am
+  { root: 41, triad: [53, 57, 60] }, // F
+  { root: 48, triad: [55, 60, 64] }, // C
+  { root: 43, triad: [55, 59, 62] }, // G
+  { root: 45, triad: [57, 60, 64] }, // Am
+  { root: 41, triad: [53, 57, 60] }, // F
+  { root: 50, triad: [57, 62, 65] }, // Dm
+  { root: 40, triad: [52, 55, 59] }, // Em
+];
+const MUSIC_MELODY = [
+  69, null, 76, null, 74, 72, null, 69,
+  65, null, 72, null, 69, 67, null, 65,
+  72, null, 76, null, 79, 76, null, 72,
+  67, null, 74, null, 71, 67, null, 64,
+  69, null, 76, 77, 76, 74, 72, 69,
+  65, null, 69, 72, 74, 72, 69, 65,
+  74, null, 77, null, 74, 72, null, 69,
+  76, null, 79, null, 76, 74, null, 71,
+];
+let audioCtx = null, musicOn = false, musicTimer = null;
+let musicMaster = null, musicBus = null, musicNext = 0, musicStep = 0;
+
+function midiHz(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+function makeImpulse(ctx, seconds, decay) {
+  const rate = ctx.sampleRate, len = Math.floor(rate * seconds);
+  const buf = ctx.createBuffer(2, len, rate);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = buf.getChannelData(ch);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+  }
+  return buf;
+}
+function initAudio() {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) throw new Error('WebAudio unavailable');
+  audioCtx = new AC();
+  const comp = audioCtx.createDynamicsCompressor();
+  comp.threshold.value = -18; comp.knee.value = 18; comp.ratio.value = 3;
+  comp.attack.value = 0.02; comp.release.value = 0.35;
+  musicMaster = audioCtx.createGain();
+  musicMaster.gain.value = 0;
+  musicBus = audioCtx.createGain();
+  const reverb = audioCtx.createConvolver();
+  reverb.buffer = makeImpulse(audioCtx, 3.2, 2.6);
+  const wet = audioCtx.createGain();
+  wet.gain.value = 0.34;
+  musicBus.connect(musicMaster);
+  musicBus.connect(reverb);
+  reverb.connect(wet);
+  wet.connect(musicMaster);
+  musicMaster.connect(comp);
+  comp.connect(audioCtx.destination);
+}
+function updateAudioLabel() {
+  if (!audioBtn) return;
+  audioBtn.setAttribute('aria-pressed', String(musicOn));
+  audioBtn.setAttribute('aria-label', LABELS[UI.lang].music);
+  audioBtn.title = UI.lang === 'en' ? 'Background music' : '背景音乐';
+}
+function playPad(t, chord, dur) {
+  const g = audioCtx.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.055, t + 1.1);
+  g.gain.setValueAtTime(0.055, t + dur - 1.4);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 1.8);
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.setValueAtTime(1050, t);
+  filter.frequency.linearRampToValueAtTime(1700, t + dur * 0.55);
+  filter.frequency.linearRampToValueAtTime(900, t + dur);
+  chord.triad.forEach((m, i) => {
+    const o = audioCtx.createOscillator();
+    o.type = i === 0 ? 'triangle' : 'sine';
+    o.frequency.value = midiHz(m);
+    o.detune.value = i === 1 ? 4 : -4;
+    o.connect(filter);
+    o.start(t);
+    o.stop(t + dur + 1.9);
+  });
+  filter.connect(g);
+  g.connect(musicBus);
+}
+function playBass(t, midi, dur) {
+  const g = audioCtx.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.07, t + 0.6);
+  g.gain.setValueAtTime(0.07, t + dur - 1.2);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 1.4);
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'lowpass'; filter.frequency.value = 240;
+  [['sine', 0], ['triangle', -4]].forEach(([type, detune]) => {
+    const o = audioCtx.createOscillator();
+    o.type = type; o.frequency.value = midiHz(midi); o.detune.value = detune;
+    o.connect(filter); o.start(t); o.stop(t + dur + 1.5);
+  });
+  filter.connect(g); g.connect(musicBus);
+}
+function playPluck(t, midi, dur) {
+  const f = midiHz(midi);
+  const g = audioCtx.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.1, t + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'lowpass'; filter.frequency.value = 3800;
+  const o = audioCtx.createOscillator();
+  o.type = 'sine'; o.frequency.value = f;
+  const o2 = audioCtx.createOscillator();
+  o2.type = 'triangle'; o2.frequency.value = f * 2; o2.detune.value = 3;
+  const h = audioCtx.createGain(); h.gain.value = 0.16;
+  o.connect(filter); o2.connect(h); h.connect(filter);
+  filter.connect(g); g.connect(musicBus);
+  o.start(t); o2.start(t); o.stop(t + dur + 0.2); o2.stop(t + dur + 0.2);
+}
+function playChime(t, midi, dur) {
+  const f = midiHz(midi);
+  const g = audioCtx.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.018, t + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  const o = audioCtx.createOscillator();
+  o.type = 'sine'; o.frequency.value = f;
+  const o2 = audioCtx.createOscillator();
+  o2.type = 'sine'; o2.frequency.value = f * 2.01; o2.detune.value = 2;
+  const h = audioCtx.createGain(); h.gain.value = 0.25;
+  o.connect(g); o2.connect(h); h.connect(g);
+  g.connect(musicBus);
+  o.start(t); o2.start(t); o.stop(t + dur + 0.3); o2.stop(t + dur + 0.3);
+}
+function scheduleMusicStep(step, t) {
+  const bar = Math.floor(step / 8) % 8;
+  const pos = step % 8;
+  const chord = MUSIC_CHORDS[bar];
+  if (pos === 0) {
+    playPad(t, chord, MUSIC_STEP * 8);
+    playBass(t, chord.root, MUSIC_STEP * 8);
+  }
+  const m = MUSIC_MELODY[step % 64];
+  if (m) playPluck(t, m, MUSIC_STEP * 1.9);
+  if (pos === 4 && bar % 2 === 0) playChime(t, chord.triad[1] + 12, MUSIC_STEP * 3.2);
+}
+function musicTick() {
+  if (!musicOn || !audioCtx) return;
+  const now = audioCtx.currentTime;
+  while (musicNext < now + 0.7) {
+    scheduleMusicStep(musicStep, musicNext);
+    musicNext += MUSIC_STEP;
+    musicStep = (musicStep + 1) % 64;
+  }
+}
+function startMusic() {
+  try {
+    if (!audioCtx) initAudio();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    musicOn = true;
+    const t = audioCtx.currentTime;
+    musicMaster.gain.cancelScheduledValues(t);
+    musicMaster.gain.setValueAtTime(0.0001, t);
+    musicMaster.gain.exponentialRampToValueAtTime(0.7, t + 2.2);
+    musicNext = t + 0.12;
+    musicStep = 0;
+    if (musicTimer) clearInterval(musicTimer);
+    musicTimer = setInterval(musicTick, 120);
+  } catch (e) {
+    musicOn = false;
+  }
+  updateAudioLabel();
+}
+function stopMusic() {
+  musicOn = false;
+  if (musicTimer) { clearInterval(musicTimer); musicTimer = null; }
+  if (audioCtx && musicMaster) {
+    const t = audioCtx.currentTime;
+    musicMaster.gain.cancelScheduledValues(t);
+    musicMaster.gain.setValueAtTime(Math.max(0.0001, musicMaster.gain.value), t);
+    musicMaster.gain.exponentialRampToValueAtTime(0.0001, t + 0.7);
+    setTimeout(() => { if (!musicOn && audioCtx && audioCtx.state === 'running') audioCtx.suspend().catch(() => {}); }, 900);
+  }
+  updateAudioLabel();
+}
+function toggleMusic() { if (musicOn) stopMusic(); else startMusic(); }
+
 function applyLanguage(lang) {
   lang = lang === 'en' ? 'en' : 'zh';
   UI.lang = lang;
@@ -2426,6 +2628,7 @@ function applyLanguage(lang) {
   updateStatus();
   updateGodLabel();
   updateHudLabel();
+  updateAudioLabel();
   updateQuestUI();
   if (resetBtn) resetBtn.setAttribute('aria-label', lang === 'en' ? 'Trigger reset' : '触发重置');
   if (bubbleKey && bubbleSprite.visible) drawBubble(BUBBLES[lang][bubbleKey] || '');
@@ -3121,6 +3324,7 @@ orbitBtn.addEventListener('click', () => { if (avatarKey !== 'camera') return; s
 $$('#avatarSeg button').forEach((b) => b.addEventListener('click', () => setAvatar(b.dataset.avatar)));
 if (resetBtn) resetBtn.addEventListener('click', () => triggerReset('hud'));
 if (hudBtn) hudBtn.addEventListener('click', () => setHudHidden(!hudHidden));
+if (audioBtn) audioBtn.addEventListener('click', toggleMusic);
 godBtn.addEventListener('click', toggleGod);
 langBtn.addEventListener('click', () => applyLanguage(UI.lang === 'zh' ? 'en' : 'zh'));
 
@@ -3181,6 +3385,10 @@ window.__bw = {
   get hud() { return hudHidden; },
   setHudHidden,
   toggleHud() { setHudHidden(!hudHidden); },
+  get music() { return musicOn; },
+  toggleMusic,
+  get audioState() { return audioCtx ? audioCtx.state : 'none'; },
+
   get walkTarget() { return walkTarget ? { x: +walkTarget.x.toFixed(2), z: +walkTarget.z.toFixed(2) } : null; },
   get avatarDist() { return +avatarDist.toFixed(2); },
   project(x, z, y = 0) {
