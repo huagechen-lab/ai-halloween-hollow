@@ -17,7 +17,7 @@ A standalone, interactive 3D Halloween hollow you can open in the browser.
 - Hide HUD: use the **Hide HUD / 隐藏 HUD** button at the top-right; it stays visible and becomes **Show HUD** so you can bring the interface back. On the public landing the host promo bar, focus hint and credit line hide with the HUD too. Nothing auto-restores it
 - Mobile: select TIBO or Potato Sister, then tap the ground to walk (a gold ring marks the target); drag to orbit, pinch to zoom. Double-tap camera reset is disabled on touch so repeated taps keep walking; use the view presets instead. On very small screens, hide the HUD first for more room
 - Duo ritual: at the gate, step TIBO into the cyan ring and Potato Sister into the amber ring (switch characters; both keep their positions). Hold both for 1.2 s to raise the spirit fire — magical embers, light columns and a sky halo, not a civic fireworks show
-- Background music: a procedural WebAudio score (no audio files), off by default; use the ♪ note button in the control panel header to fade it in or out
+- Background music: a 61-second seamless ambient loop supplied by the author, embedded in the scene (no extra request), off by default; use the ♪ note button in the control panel header to start or stop it. It loops indefinitely; the procedural score is only a decode fallback
 - Chinese / English UI: auto-detected from the browser, toggle in the top bar or scene HUD; `?lang=zh` / `?lang=en` override
 
 ## What it is
@@ -48,6 +48,7 @@ a license. Copy-ready attribution, HTML snippet and commercial licensing:
 [credit.html](https://huagechen-lab.github.io/ai-halloween-hollow/credit.html).
 
 - Scene: **孙小画** · [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) · generated with **DeepSeek V4.1 Flash 1017**
+- Background track: supplied by the author; rights remain with its provider and it is not covered by the CC BY-NC 4.0 license
 - Landing page and metadata: © 2026 BillionWorlds, all rights reserved
 
 See [LICENSE](./LICENSE) for the code/content split and terms.
