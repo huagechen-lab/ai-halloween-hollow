@@ -92,7 +92,6 @@
   }
   .promo a:hover { transform: translateY(-1px); }
   body.hud-out .promo,
-  body.hud-out .kbd-hint,
   body.hud-out .credit {
     opacity: 0 !important; visibility: hidden !important; pointer-events: none !important;
   }
@@ -157,7 +156,7 @@
     .promo .share { display: none; }
   }
   @media (max-width: 760px) and (max-height: 640px) {
-    .promo, .kbd-hint { display: none !important; }
+    .promo { display: none !important; }
   }
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; }
@@ -248,10 +247,11 @@
     }
   }
   function ready() { document.body.classList.add('ready'); }
+  document.body.classList.add('hud-out');
   setUI();
   if (frame) {
     frame.src = frame.getAttribute('data-src') + '?lang=' + (lang() === 'en' ? 'en' : 'zh');
-    frame.addEventListener('load', function () { document.body.classList.remove('hud-out'); setTimeout(ready, 700); sendLang(); });
+    frame.addEventListener('load', function () { document.body.classList.add('hud-out'); setTimeout(ready, 700); sendLang(); });
     setTimeout(ready, 6000);
     function syncHint() { if (hint) hint.hidden = document.activeElement === frame; }
     if (hint) hint.addEventListener('click', function () { frame.focus(); syncHint(); });
