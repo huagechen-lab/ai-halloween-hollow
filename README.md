@@ -8,7 +8,7 @@ A standalone, interactive 3D Halloween hollow you can open in the browser.
 ## Controls
 
 - Arrow keys / WASD move the camera (forward / back along the view, strafe left / right)
-- Drag to orbit, scroll or pinch to zoom, double-click to reset the camera
+- Drag to orbit, scroll or pinch to zoom, double-click to reset the camera. In character mode the same gestures pull the follow camera back (6.5–14.5 m); in free-camera mode the FOV goes out to 82°
 - Time presets: Day / Sunset / Night · Weather presets: Clear / Drift / Overcast / Drizzle / Storm (15 independent combinations)
 - God view: rise above the hollow and return exactly to the previous camera
 - Auto-orbit toggle; paused by drag, movement and god view

@@ -2253,7 +2253,8 @@ const savedAvatarCam = {
 };
 let avatarKey = 'camera';
 let camYaw = 0, camPitch = 0.36, targetCamYaw = 0, targetCamPitch = 0.36;
-const AVATAR_DIST = 8.0;
+let avatarDist = 8.0, targetAvatarDist = 8.0;
+const AVATAR_MIN_DIST = 6.5, AVATAR_MAX_DIST = 14.5;
 
 /* ── sigil quest + reset ritual state ─────────────────────── */
 const quest = { sigils: 0, resets: 0, ready: false };
@@ -2331,8 +2332,8 @@ const BUBBLES = {
 
 const BUBBLES_MOBILE = {
   zh: {
-    tiboIntro: '我是 TIBO。点地面移动，集齐 8 枚灯印按大按钮。',
-    potatoIntro: '土豆姐：点地面走动，收回 8 枚灯印。',
+    tiboIntro: '我是 TIBO。点地面移动，捏合缩放，集齐 8 枚灯印。',
+    potatoIntro: '土豆姐：点地面走动，捏合缩放，收回 8 枚灯印。',
     collect0: '灯印 +1。继续。',
     collect1: '额度回充中。',
     collect2: '下一盏在等你。',
@@ -2343,8 +2344,8 @@ const BUBBLES_MOBILE = {
     far: '走近按钮再按 E。',
   },
   en: {
-    tiboIntro: 'TIBO here. Tap the ground to walk; collect 8 sigils, then hit the big button.',
-    potatoIntro: 'Potato: tap the ground to walk; bring back 8 sigils.',
+    tiboIntro: 'TIBO here. Tap the ground to walk; pinch to zoom; collect 8 sigils.',
+    potatoIntro: 'Potato: tap the ground to walk; pinch to zoom; bring back 8 sigils.',
     collect0: 'Sigil +1. Keep going.',
     collect1: 'Quota recharging.',
     collect2: 'Next lantern awaits.',
@@ -2495,9 +2496,9 @@ function followCameraPos(head) {
   const cp = camPitch;
   const rx = Math.cos(camYaw), rz = -Math.sin(camYaw);
   const p = new THREE.Vector3(
-    head.x + Math.sin(camYaw) * Math.cos(cp) * AVATAR_DIST + rx * 0.7,
-    head.y + Math.sin(cp) * AVATAR_DIST,
-    head.z + Math.cos(camYaw) * Math.cos(cp) * AVATAR_DIST + rz * 0.7
+    head.x + Math.sin(camYaw) * Math.cos(cp) * avatarDist + rx * 0.7,
+    head.y + Math.sin(cp) * avatarDist,
+    head.z + Math.cos(camYaw) * Math.cos(cp) * avatarDist + rz * 0.7
   );
   /* pull the follow camera in front of the cottage shell */
   if (Math.hypot(p.x + 6.6, p.z + 25.6) < 4.35) {
@@ -2823,6 +2824,7 @@ function updateAvatarCamera(dt) {
   camYaw += wrapAngle(targetCamYaw - camYaw) * k;
   camPitch += (targetCamPitch - camPitch) * k;
   fov += (targetFov - fov) * k;
+  avatarDist += (targetAvatarDist - avatarDist) * k;
   stepAvatar(dt);
   const head = avatarHead();
   const p = followCameraPos(head);
@@ -2962,7 +2964,7 @@ function applyState(s, flashV) {
 const canvas = renderer.domElement;
 const pointers = new Map();
 let dragging = false, dragMoved = 0, lastX = 0, lastY = 0;
-let pinchDist = 0, pinchFov = HOME.fov;
+let pinchDist = 0, pinchFov = HOME.fov, pinchAvatarDist = 8.0;
 let burstTimer = 0;
 const held = { up: false, down: false, left: false, right: false };
 const raycaster = new THREE.Raycaster();
@@ -3010,6 +3012,7 @@ canvas.addEventListener('pointerdown', (e) => {
     const [a, b] = [...pointers.values()];
     pinchDist = Math.hypot(a.x - b.x, a.y - b.y);
     pinchFov = targetFov;
+    pinchAvatarDist = targetAvatarDist;
   }
   dragging = true;
   dragMoved = 0;
@@ -3022,7 +3025,10 @@ canvas.addEventListener('pointermove', (e) => {
   if (pointers.size === 2) {
     const [a, b] = [...pointers.values()];
     const d = Math.hypot(a.x - b.x, a.y - b.y);
-    if (pinchDist > 10) targetFov = clamp(pinchFov * (pinchDist / Math.max(20, d)), 34, 74);
+    if (pinchDist > 10) {
+      if (avatarKey !== 'camera') targetAvatarDist = clamp(pinchAvatarDist * (pinchDist / Math.max(20, d)), AVATAR_MIN_DIST, AVATAR_MAX_DIST);
+      else targetFov = clamp(pinchFov * (pinchDist / Math.max(20, d)), 34, 82);
+    }
     return;
   }
   if (!dragging) return;
@@ -3059,7 +3065,11 @@ canvas.addEventListener('dblclick', (e) => {
 });
 canvas.addEventListener('wheel', (e) => {
   e.preventDefault();
-  targetFov = clamp(targetFov + Math.sign(e.deltaY) * 3.2, 34, 74);
+  if (avatarKey !== 'camera') {
+    targetAvatarDist = clamp(targetAvatarDist + Math.sign(e.deltaY) * 1.0, AVATAR_MIN_DIST, AVATAR_MAX_DIST);
+  } else {
+    targetFov = clamp(targetFov + Math.sign(e.deltaY) * 3.2, 34, 82);
+  }
 }, { passive: false });
 
 window.addEventListener('keydown', (e) => {
@@ -3172,6 +3182,7 @@ window.__bw = {
   setHudHidden,
   toggleHud() { setHudHidden(!hudHidden); },
   get walkTarget() { return walkTarget ? { x: +walkTarget.x.toFixed(2), z: +walkTarget.z.toFixed(2) } : null; },
+  get avatarDist() { return +avatarDist.toFixed(2); },
   project(x, z, y = 0) {
     const v = new THREE.Vector3(x, y, z);
     v.project(camera);
