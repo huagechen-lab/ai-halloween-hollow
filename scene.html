@@ -123,6 +123,30 @@
   .lang { top: 128px; font-size: 10px; letter-spacing: .08em; padding: 7px 11px; }
   .god:hover, .lang:hover { background: rgba(30, 44, 52, .6); border-color: rgba(233, 211, 164, .65); color: #fff; }
   .god[aria-pressed="true"] { background: rgba(233, 211, 164, .9); color: #16201f; border-color: rgba(233, 211, 164, .9); }
+  .hud-toggle {
+    position: fixed; right: 26px; top: 172px; z-index: 8;
+    padding: 7px 11px; border: 1px solid rgba(244, 240, 230, .3); border-radius: 999px;
+    background: rgba(8, 16, 22, .42); color: var(--ink);
+    font: 10px/1 var(--sans); letter-spacing: .08em; line-height: 1;
+    cursor: pointer; backdrop-filter: blur(12px);
+    transition: background .25s, border-color .25s, color .25s;
+    animation: hudIn 1.4s .12s cubic-bezier(.22, .61, .36, 1) both;
+  }
+  .hud-toggle:hover { background: rgba(30, 44, 52, .6); border-color: rgba(233, 211, 164, .65); color: #fff; }
+  .hud-toggle[aria-pressed="true"] { background: rgba(233, 211, 164, .9); color: #16201f; border-color: rgba(233, 211, 164, .9); }
+
+  body.hud-hidden .masthead,
+  body.hud-hidden .status,
+  body.hud-hidden .season-rail,
+  body.hud-hidden .god,
+  body.hud-hidden .lang,
+  body.hud-hidden .panel,
+  body.hud-hidden .hint,
+  body.hud-hidden .toast {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
 
   /* ── season rail ──────────────────────────────────────────── */
   .season-rail {
@@ -297,6 +321,7 @@
     .status .sep, .status #statusWeather { display: none; }
     .god { top: 58px; right: 14px; padding: 8px 12px; font-size: 10.5px; }
     .lang { top: 98px; right: 14px; padding: 6px 9px; font-size: 9.5px; }
+    .hud-toggle { top: 138px; right: 14px; padding: 6px 9px; font-size: 9.5px; }
     .panel { left: 12px; right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); width: auto; padding: 13px 12px 10px; }
     .panel-head { margin-bottom: 10px; font-size: 12px; }
     .p-coord { display: none; }
@@ -307,7 +332,7 @@
     .rule { margin: 9px 0; }
     .hint { display: none; }
     .orbit-row { margin-top: 10px; }
-    .toast { top: 138px; font-size: 8px; }
+    .toast { top: 172px; font-size: 8px; }
   }
 
   @media (max-width: 380px) {
@@ -352,6 +377,7 @@
 
 <button class="god" id="godBtn" type="button" aria-pressed="false">上帝视角</button>
 <button class="lang" id="langBtn" type="button" aria-label="Switch language">EN</button>
+<button class="hud-toggle" id="hudToggle" type="button" aria-pressed="false">隐藏 HUD</button>
 
 <div class="season-rail" aria-hidden="true">
   <span class="rail-cn lang-zh" id="railCn">AI 南瓜谷 · 灯阵</span>
@@ -2231,6 +2257,7 @@ const AVATAR_DIST = 8.0;
 const quest = { sigils: 0, resets: 0, ready: false };
 const ritual = { active: false, t: 0, dur: 0, grand: false };
 let resetCooldown = 0, shockT = 9, wasNearProp = false, collectArmed = false;
+let hudHidden = false;
 const shockMat = new THREE.MeshBasicMaterial({ color: '#ff5a3c', transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false });
 const shockwave = new THREE.Mesh(new THREE.RingGeometry(0.55, 0.72, 48), shockMat);
 shockwave.rotation.x = -Math.PI / 2;
@@ -2244,6 +2271,8 @@ const LABELS = {
     weather: { clear: '晴朗', scattered: '疏云', overcast: '阴天', lightrain: '小雨', storm: '暴雨' },
     biome: 'AI 雾谷',
     god: '上帝视角', back: '返回原位', lang: 'EN',
+    hudHide: '隐藏 HUD', hudShow: '显示 HUD',
+    hudHideAria: '隐藏界面', hudShowAria: '显示界面',
     title: 'AI 万圣夜 · 雾谷灯阵',
     canvas: 'AI 万圣夜：可环视的 AI 万圣夜三维场景',
     panel: '场景预设', godAria: '升空俯瞰南瓜谷与老宅', backAria: '返回原机位',
@@ -2254,6 +2283,8 @@ const LABELS = {
     weather: { clear: 'Clear', scattered: 'Drift', overcast: 'Overcast', lightrain: 'Drizzle', storm: 'Storm' },
     biome: 'AI Hollow',
     god: 'God view', back: 'Back to view', lang: 'ZH',
+    hudHide: 'Hide HUD', hudShow: 'Show HUD',
+    hudHideAria: 'Hide interface', hudShowAria: 'Show interface',
     title: 'AI Halloween · Lantern Hollow',
     canvas: 'AI Halloween: an orbitable AI Halloween scene',
     panel: 'Scene presets', godAria: 'Rise above the hollow', backAria: 'Return to camera',
@@ -2320,6 +2351,7 @@ const statusTime = $('#statusTime');
 const statusWeather = $('#statusWeather');
 const godBtn = $('#godBtn');
 const langBtn = $('#langBtn');
+const hudBtn = $('#hudToggle');
 const orbitBtn = $('#orbitToggle');
 const panelEl = $('.panel');
 const sigilLine = $('#sigilLine');
@@ -2354,6 +2386,22 @@ function updateGodLabel() {
   godBtn.setAttribute('aria-label', godOn ? L.backAria : L.godAria);
   godBtn.setAttribute('aria-pressed', String(godOn));
 }
+function updateHudLabel() {
+  if (!hudBtn) return;
+  const L = LABELS[UI.lang];
+  hudBtn.textContent = hudHidden ? L.hudShow : L.hudHide;
+  hudBtn.setAttribute('aria-label', hudHidden ? L.hudShowAria : L.hudHideAria);
+  hudBtn.setAttribute('aria-pressed', String(hudHidden));
+}
+function setHudHidden(on) {
+  hudHidden = !!on;
+  document.body.classList.toggle('hud-hidden', hudHidden);
+  updateHudLabel();
+  if (hudHidden) {
+    hideBubble();
+    if (toastEl) toastEl.classList.remove('show');
+  }
+}
 function applyLanguage(lang) {
   lang = lang === 'en' ? 'en' : 'zh';
   UI.lang = lang;
@@ -2366,6 +2414,7 @@ function applyLanguage(lang) {
   langBtn.setAttribute('aria-label', L.langAria);
   updateStatus();
   updateGodLabel();
+  updateHudLabel();
   updateQuestUI();
   if (resetBtn) resetBtn.setAttribute('aria-label', lang === 'en' ? 'Trigger reset' : '触发重置');
   if (bubbleKey && bubbleSprite.visible) drawBubble(BUBBLES[lang][bubbleKey] || '');
@@ -2503,7 +2552,7 @@ function drawBubble(text) {
   bubbleTex.needsUpdate = true;
 }
 function speak(key) {
-  if (avatarKey === 'camera' || godOn) return;
+  if (avatarKey === 'camera' || godOn || hudHidden) return;
   const text = (IS_MOBILE ? BUBBLES_MOBILE : BUBBLES)[UI.lang][key] || BUBBLES[UI.lang][key];
   if (!text) return;
   bubbleKey = key;
@@ -2530,7 +2579,7 @@ function updateBubble(dt) {
   if (left <= 0) bubbleKey = null;
 }
 function showToast(zh, en, ms = 2600) {
-  if (!toastEl) return;
+  if (!toastEl || hudHidden) return;
   toastEl.textContent = UI.lang === 'en' ? en : zh;
   toastEl.classList.add('show');
   clearTimeout(toastTimer);
@@ -2992,6 +3041,7 @@ $$('#weatherSeg button').forEach((b) => b.addEventListener('click', () => setWea
 orbitBtn.addEventListener('click', () => { if (avatarKey !== 'camera') return; setOrbit(!UI.orbit); });
 $$('#avatarSeg button').forEach((b) => b.addEventListener('click', () => setAvatar(b.dataset.avatar)));
 if (resetBtn) resetBtn.addEventListener('click', () => triggerReset('hud'));
+if (hudBtn) hudBtn.addEventListener('click', () => setHudHidden(!hudHidden));
 godBtn.addEventListener('click', toggleGod);
 langBtn.addEventListener('click', () => applyLanguage(UI.lang === 'zh' ? 'en' : 'zh'));
 
@@ -3049,6 +3099,9 @@ window.__bw = {
     const g = actorGroup();
     return [+g.position.x.toFixed(2), +g.position.y.toFixed(2), +g.position.z.toFixed(2)];
   },
+  get hud() { return hudHidden; },
+  setHudHidden,
+  toggleHud() { setHudHidden(!hudHidden); },
   get quest() { return { sigils: quest.sigils, resets: quest.resets, ready: quest.ready, ritual: ritual.active }; },
   lanterns() { return lanternMarks.map((m) => ({ x: +m.x.toFixed(2), z: +m.z.toFixed(2), lit: m.lit })); },
   resetScreen() {
