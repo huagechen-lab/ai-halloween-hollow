@@ -2289,6 +2289,59 @@ walkMarker.visible = false;
 scene.add(walkMarker);
 let walkTarget = null;
 
+/* ── duo rings / spirit ritual ───────────────────────────── */
+const DUO_RINGS = [
+  { key: 'tibo', x: -0.9, z: 1.4, color: '#7fe3d2' },
+  { key: 'potato', x: 2.2, z: 1.5, color: '#ffb257' },
+];
+const DUO_RADIUS = 1.05;
+const duoRingObjs = [];
+for (let i = 0; i < DUO_RINGS.length; i++) {
+  const r = DUO_RINGS[i];
+  const y = groundH(r.x, r.z) + 0.05;
+  const mat = new THREE.MeshBasicMaterial({ color: r.color, transparent: true, opacity: 0.26, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false });
+  const innerMat = mat.clone();
+  innerMat.opacity = 0.12;
+  const outer = new THREE.Mesh(new THREE.RingGeometry(0.92, 1.03, 48), mat);
+  outer.rotation.x = -Math.PI / 2;
+  outer.position.set(r.x, y, r.z);
+  scene.add(outer);
+  const inner = new THREE.Mesh(new THREE.RingGeometry(0.58, 0.63, 36), innerMat);
+  inner.rotation.x = -Math.PI / 2;
+  inner.position.set(r.x, y + 0.006, r.z);
+  scene.add(inner);
+  const glyphMat = new THREE.MeshBasicMaterial({ color: r.color, transparent: true, opacity: 0.3, depthWrite: false, blending: THREE.AdditiveBlending, fog: false });
+  const glyphs = [];
+  for (let k = 0; k < 6; k++) {
+    const g = new THREE.Mesh(new THREE.OctahedronGeometry(0.055, 0), glyphMat);
+    const a = (k / 6) * Math.PI * 2 + i * 0.35;
+    g.position.set(r.x + Math.cos(a) * 0.78, y + 0.07, r.z + Math.sin(a) * 0.78);
+    scene.add(g);
+    glyphs.push(g);
+  }
+  duoRingObjs.push({ ...r, y, mat, innerMat, glyphMat, outer, inner, glyphs, phase: i * 1.7, flash: 0 });
+}
+namePlate('双人圈', 0.65, 2.45, 1.45, 0.92, 'TIBO · POTATO');
+
+const duoBeams = [];
+for (const r of DUO_RINGS) {
+  const mat = new THREE.MeshBasicMaterial({ color: r.color, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false });
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.78, 7.5, 14, 1, true), mat);
+  beam.position.set(r.x, groundH(r.x, r.z) + 3.85, r.z);
+  beam.visible = false;
+  scene.add(beam);
+  duoBeams.push({ mesh: beam, mat });
+}
+const duoHaloMat = new THREE.SpriteMaterial({ map: glowTex, color: '#ffd9a0', transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, fog: false });
+const duoHalo = new THREE.Sprite(duoHaloMat);
+duoHalo.position.set(0, 9, -7);
+duoHalo.scale.setScalar(1);
+duoHalo.visible = false;
+scene.add(duoHalo);
+const duoEmbers = [], duoWisps = [];
+let duoHold = 0, duoCooldown = 0, duoArmed = true, duoCount = 0, duoMagicT = 0, duoHaloT = 0;
+let duoIn0 = false, duoIn1 = false, duoWas0 = false, duoWas1 = false;
+
 const LABELS = {
   zh: {
     time: { day: '日间', sunset: '黄昏', night: '夜晚' },
@@ -2330,6 +2383,8 @@ const BUBBLES = {
     mini: '小重置启动。灯印保留，继续收集。',
     grand: 'All reset for everyone！灯印归零，再来一轮。',
     far: '先走近巨型按钮，再按 E。',
+    ring: '火圈亮了。让另一位站进自己的圈。',
+    duo: '双人引灵成了。看天上。',
   },
   en: {
     tiboIntro: "I'm TIBO. Collect all 8 sigils, then hit the big button.",
@@ -2342,6 +2397,8 @@ const BUBBLES = {
     mini: 'Mini reset engaged. Sigils stay. Keep collecting.',
     grand: 'All reset for everyone. Sigils cleared — go again.',
     far: 'Get closer to the big button, then press E.',
+    ring: 'One ring lit. Bring your partner to the other.',
+    duo: 'The duo ritual is complete. Look up.',
   },
 };
 
@@ -2357,6 +2414,8 @@ const BUBBLES_MOBILE = {
     mini: '小重置。灯印保留。',
     grand: 'All reset！灯印归零，再来一轮。',
     far: '走近按钮再按 E。',
+    ring: '火圈亮了，换另一位。',
+    duo: '双人引灵成了。',
   },
   en: {
     tiboIntro: 'TIBO here. Tap to walk; pinch in to pull back; collect 8 sigils.',
@@ -2369,6 +2428,8 @@ const BUBBLES_MOBILE = {
     mini: 'Mini reset. Sigils stay.',
     grand: 'All reset! Sigils cleared.',
     far: 'Get closer, then press E.',
+    ring: 'Ring lit. Bring your partner.',
+    duo: 'Duo ritual complete.',
   },
 };
 
@@ -2903,6 +2964,148 @@ function pressResetButton() {
   triggerReset('key');
 }
 
+
+/* ── duo ritual logic ────────────────────────────────────── */
+function triggerDuoRitual() {
+  duoArmed = false;
+  duoCooldown = 12;
+  duoHold = 0;
+  duoCount += 1;
+  duoMagicT = 3.4;
+  duoHaloT = 0;
+  flareT = 1;
+  batFlare = 1;
+  duoRingObjs.forEach((r) => { r.flash = 1; });
+  duoBeams.forEach((b) => { b.mesh.visible = true; b.mat.opacity = 0; });
+  duoHalo.visible = true;
+  duoHalo.scale.setScalar(1);
+  duoHaloMat.opacity = 0;
+  spawnDuoMagic();
+  if (audioCtx && musicOn) {
+    const t = audioCtx.currentTime + 0.05;
+    [81, 84, 88].forEach((m, i) => playChime(t + i * 0.18, m, 1.8));
+  }
+  speak('duo');
+  showToast(`双人引灵 ×${duoCount}`, `DUO RITUAL ×${duoCount}`, 3200);
+}
+function spawnDuoMagic() {
+  const N = IS_MOBILE || REDUCED ? 90 : 160;
+  const geo = new THREE.BufferGeometry();
+  const pos = new Float32Array(N * 3);
+  const cols = new Float32Array(N * 3);
+  const vel = new Float32Array(N * 3);
+  const palette = ['#ffb257', '#ff8a36', '#ffd27a', '#b79cff', '#7fe3d2'].map((c) => new THREE.Color(c));
+  const tmp = new THREE.Color();
+  for (let i = 0; i < N; i++) {
+    const sky = i % 9 === 0;
+    const ring = DUO_RINGS[i % 2];
+    const ox = sky ? rr(-2.2, 2.2) : ring.x + rr(-0.9, 0.9);
+    const oz = sky ? rr(-8.5, -3) : ring.z + rr(-0.9, 0.9);
+    const oy = sky ? rr(5, 8) : groundH(ring.x, ring.z) + rr(0.2, 1.3);
+    pos[i * 3] = ox; pos[i * 3 + 1] = oy; pos[i * 3 + 2] = oz;
+    tmp.copy(pick(palette));
+    cols[i * 3] = tmp.r; cols[i * 3 + 1] = tmp.g; cols[i * 3 + 2] = tmp.b;
+    vel[i * 3] = rr(-0.6, 0.6);
+    vel[i * 3 + 1] = rr(1.0, 2.6);
+    vel[i * 3 + 2] = rr(-0.6, 0.6);
+  }
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(cols, 3));
+  const mat = new THREE.PointsMaterial({ map: BURST.tex, size: 0.34, vertexColors: true, transparent: true, opacity: 1, depthWrite: false, blending: THREE.AdditiveBlending, fog: false });
+  const pts = new THREE.Points(geo, mat);
+  pts.frustumCulled = false;
+  scene.add(pts);
+  duoEmbers.push({ pts, vel, born: elapsed, life: 3.6 });
+
+  const wispColors = ['#ffd27a', '#b79cff', '#7fe3d2', '#ff9a52'];
+  const count = IS_MOBILE || REDUCED ? 7 : 10;
+  for (let i = 0; i < count; i++) {
+    const sky = i >= count - 2;
+    const ring = DUO_RINGS[i % 2];
+    const wm = new THREE.SpriteMaterial({ map: glowTex, color: pick(wispColors), transparent: true, opacity: 0.6, depthWrite: false, blending: THREE.AdditiveBlending, fog: false });
+    const s = new THREE.Sprite(wm);
+    if (sky) s.position.set(rr(-2.5, 2.5), rr(5, 7.5), rr(-9, -4));
+    else s.position.set(ring.x + rr(-0.6, 0.6), groundH(ring.x, ring.z) + rr(0.8, 2.0), ring.z + rr(-0.6, 0.6));
+    s.scale.setScalar(sky ? rr(1.0, 1.6) : rr(0.45, 0.85));
+    scene.add(s);
+    duoWisps.push({ s, mat: wm, vel: new THREE.Vector3(rr(-0.15, 0.15), sky ? rr(0.2, 0.45) : rr(0.5, 1.1), rr(-0.15, 0.15)), born: elapsed, life: sky ? 3.2 : 2.8, phase: rand() * TAU });
+  }
+}
+function updateDuoRitual(dt) {
+  duoCooldown = Math.max(0, duoCooldown - dt);
+  const in0 = Math.hypot(tiboGroup.position.x - DUO_RINGS[0].x, tiboGroup.position.z - DUO_RINGS[0].z) < DUO_RADIUS;
+  const in1 = Math.hypot(potatoGroup.position.x - DUO_RINGS[1].x, potatoGroup.position.z - DUO_RINGS[1].z) < DUO_RADIUS;
+  duoIn0 = in0; duoIn1 = in1;
+  for (let i = 0; i < duoRingObjs.length; i++) {
+    const r = duoRingObjs[i];
+    const isIn = i === 0 ? in0 : in1;
+    const flash = r.flash || 0;
+    r.mat.opacity += ((isIn ? 0.82 : 0.26) + flash * 0.2 - r.mat.opacity) * Math.min(1, dt * 7);
+    r.innerMat.opacity += ((isIn ? 0.5 : 0.12) + flash * 0.15 - r.innerMat.opacity) * Math.min(1, dt * 7);
+    r.glyphMat.opacity += ((isIn ? 0.75 : 0.3) + flash * 0.3 - r.glyphMat.opacity) * Math.min(1, dt * 7);
+    const s = 1 + Math.sin(elapsed * (isIn ? 3.2 : 1.6) + r.phase) * (isIn ? 0.035 : 0.012);
+    r.outer.scale.setScalar(s);
+    r.inner.scale.setScalar(1 + Math.sin(elapsed * 2 + r.phase) * 0.03);
+    for (const g of r.glyphs) g.rotation.y += dt * (isIn ? 1.4 : 0.5);
+    if (r.flash) r.flash = Math.max(0, r.flash - dt * 0.7);
+  }
+  if ((in0 && !duoWas0) || (in1 && !duoWas1)) {
+    if (!(in0 && in1)) {
+      showToast('火圈点亮 · 让另一位站进自己的圈', 'Ring lit · bring your partner', 2600);
+      speak('ring');
+    }
+  }
+  duoWas0 = in0; duoWas1 = in1;
+  if (in0 && in1 && duoArmed && duoCooldown <= 0) {
+    duoHold += dt;
+    if (duoHold >= 1.2) triggerDuoRitual();
+  } else {
+    duoHold = 0;
+    if (!in0 || !in1) duoArmed = true;
+  }
+  if (duoMagicT > 0) {
+    duoMagicT = Math.max(0, duoMagicT - dt);
+    const k = 1 - duoMagicT / 3.4;
+    duoBeams.forEach((b) => { b.mat.opacity = Math.max(0, 0.22 * Math.sin(Math.min(1, k) * Math.PI)); });
+    duoHaloT += dt;
+    duoHalo.scale.setScalar(3 + duoHaloT * 9);
+    duoHaloMat.opacity = Math.max(0, 0.4 * (1 - duoHaloT / 3.2));
+    if (duoMagicT <= 0) {
+      duoBeams.forEach((b) => { b.mesh.visible = false; });
+      duoHalo.visible = false;
+    }
+  }
+  for (let i = duoEmbers.length - 1; i >= 0; i--) {
+    const b = duoEmbers[i];
+    const age = elapsed - b.born;
+    const pa = b.pts.geometry.attributes.position;
+    for (let k = 0; k < pa.count; k++) {
+      b.vel[k * 3 + 1] += 0.22 * dt;
+      pa.setXYZ(k, pa.getX(k) + b.vel[k * 3] * dt, pa.getY(k) + b.vel[k * 3 + 1] * dt, pa.getZ(k) + b.vel[k * 3 + 2] * dt);
+    }
+    pa.needsUpdate = true;
+    b.pts.material.opacity = Math.max(0, 1 - age / b.life);
+    if (age > b.life) {
+      scene.remove(b.pts);
+      b.pts.geometry.dispose();
+      b.pts.material.dispose();
+      duoEmbers.splice(i, 1);
+    }
+  }
+  for (let i = duoWisps.length - 1; i >= 0; i--) {
+    const w = duoWisps[i];
+    const age = elapsed - w.born;
+    w.s.position.addScaledVector(w.vel, dt);
+    w.s.position.x += Math.sin(elapsed * 2.4 + w.phase) * 0.008;
+    w.mat.opacity = Math.max(0, 0.6 * (1 - age / w.life));
+    if (age > w.life) {
+      scene.remove(w.s);
+      w.mat.dispose();
+      duoWisps.splice(i, 1);
+    }
+  }
+}
+
 function setAvatar(key) {
   if (!['camera', 'tibo', 'potato'].includes(key) || key === avatarKey) return;
   clearWalkTarget();
@@ -3395,6 +3598,8 @@ window.__bw = {
   get audioState() { return audioCtx ? audioCtx.state : 'none'; },
 
   get walkTarget() { return walkTarget ? { x: +walkTarget.x.toFixed(2), z: +walkTarget.z.toFixed(2) } : null; },
+  get duo() { return { tibo: duoIn0, potato: duoIn1, hold: +duoHold.toFixed(2), count: duoCount, active: duoMagicT > 0 }; },
+  duoRings() { return DUO_RINGS.map((r) => ({ key: r.key, x: r.x, z: r.z })); },
   get avatarDist() { return +avatarDist.toFixed(2); },
   project(x, z, y = 0) {
     const v = new THREE.Vector3(x, y, z);
@@ -3563,6 +3768,7 @@ function animate() {
     shockMat.opacity = Math.max(0, 0.85 * (1 - k));
     if (k >= 1) shockwave.visible = false;
   }
+  updateDuoRitual(dt);
   updateBubble(dt);
 
   skyUniforms.uTime.value = elapsed;

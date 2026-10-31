@@ -16,6 +16,7 @@ A standalone, interactive 3D Halloween hollow you can open in the browser.
 - Reset: press `E` near the giant button, press `R` anywhere, click/tap the red dome, or use the **RESET** button in the control panel. Collect all 8 sigils first for the full "reset all" finale
 - Hide HUD: use the **Hide HUD / 隐藏 HUD** button at the top-right; it stays visible and becomes **Show HUD** so you can bring the interface back. On the public landing the host promo bar, focus hint and credit line hide with the HUD too. Nothing auto-restores it
 - Mobile: select TIBO or Potato Sister, then tap the ground to walk (a gold ring marks the target); drag to orbit, pinch to zoom. Double-tap camera reset is disabled on touch so repeated taps keep walking; use the view presets instead. On very small screens, hide the HUD first for more room
+- Duo ritual: at the gate, step TIBO into the cyan ring and Potato Sister into the amber ring (switch characters; both keep their positions). Hold both for 1.2 s to raise the spirit fire — magical embers, light columns and a sky halo, not a civic fireworks show
 - Background music: a procedural WebAudio score (no audio files), off by default; use the ♪ note button in the control panel header to fade it in or out
 - Chinese / English UI: auto-detected from the browser, toggle in the top bar or scene HUD; `?lang=zh` / `?lang=en` override
 
