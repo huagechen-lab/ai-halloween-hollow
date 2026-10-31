@@ -2296,7 +2296,8 @@ const savedAvatarCam = {
 let avatarKey = 'camera';
 let camYaw = 0, camPitch = 0.36, targetCamYaw = 0, targetCamPitch = 0.36;
 let avatarDist = 8.0, targetAvatarDist = 8.0;
-const AVATAR_MIN_DIST = 6.5, AVATAR_MAX_DIST = 14.5;
+let cineManual = false;
+const AVATAR_MIN_DIST = 6.5, AVATAR_MAX_DIST = 24, AVATAR_START_DIST = 14.5;
 
 /* ── sigil quest + reset ritual state ─────────────────────── */
 const quest = { sigils: 0, resets: 0, ready: false };
@@ -2375,10 +2376,12 @@ resetSky.visible = false;
 scene.add(resetSky);
 let resetSkyT = 0, resetSkyDur = 0, resetSkyGrand = false, resetSkyW = 10, resetSkyH = 3.52;
 function showResetSky(grand) {
+  cineManual = false;
+  if (IS_MOBILE && toastEl) { toastEl.classList.remove('show'); clearTimeout(toastTimer); }
   resetSkyGrand = !!grand;
   resetSkyDur = grand ? 7.2 : 5.2;
   resetSkyT = resetSkyDur;
-  resetSkyW = grand ? 13 : 10;
+  resetSkyW = (grand ? 13 : 10) * (IS_MOBILE ? 0.6 : 1);
   resetSkyH = resetSkyW / 2.844;
   resetSky.visible = true;
   resetSkyMat.opacity = 0;
@@ -2934,13 +2937,13 @@ function avatarHead() {
   const h = avatarKey === 'tibo' ? 1.72 : 1.55;
   return new THREE.Vector3(g.position.x, groundH(g.position.x, g.position.z) + h, g.position.z);
 }
-function followCameraPos(head) {
-  const cp = camPitch;
+function followCameraPos(head, dist = avatarDist, pitch = camPitch) {
+  const cp = Math.cos(pitch);
   const rx = Math.cos(camYaw), rz = -Math.sin(camYaw);
   const p = new THREE.Vector3(
-    head.x + Math.sin(camYaw) * Math.cos(cp) * avatarDist + rx * 0.7,
-    head.y + Math.sin(cp) * avatarDist,
-    head.z + Math.cos(camYaw) * Math.cos(cp) * avatarDist + rz * 0.7
+    head.x + Math.sin(camYaw) * Math.cos(cp) * dist + rx * 0.7,
+    head.y + Math.sin(pitch) * dist,
+    head.z + Math.cos(camYaw) * Math.cos(cp) * dist + rz * 0.7
   );
   /* pull the follow camera in front of the cottage shell */
   if (Math.hypot(p.x + 6.6, p.z + 25.6) < 4.35) {
@@ -2952,10 +2955,10 @@ function followCameraPos(head) {
   }
   return p;
 }
-function avatarLookTarget(head) {
+function avatarLookTarget(head, lift = 0) {
   const fx = -Math.sin(camYaw), fz = -Math.cos(camYaw);
-  if (IS_MOBILE) return new THREE.Vector3(head.x + fx * 3.4, head.y - 1.3, head.z + fz * 3.4);
-  return new THREE.Vector3(head.x + fx * 4.0, head.y + 0.7, head.z + fz * 4.0);
+  if (IS_MOBILE) return new THREE.Vector3(head.x + fx * 3.4, head.y - 1.3 + lift, head.z + fz * 3.4);
+  return new THREE.Vector3(head.x + fx * 4.0, head.y + 0.7 + lift, head.z + fz * 4.0);
 }
 function syncAvatarButtons() {
   $$('#avatarSeg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.avatar === avatarKey)));
@@ -3034,6 +3037,7 @@ function updateBubble(dt) {
 }
 function showToast(zh, en, ms = 2600) {
   if (!toastEl || hudHidden) return;
+  if (IS_MOBILE && resetSkyT > 0) return;
   toastEl.textContent = UI.lang === 'en' ? en : zh;
   toastEl.classList.add('show');
   clearTimeout(toastTimer);
@@ -3390,8 +3394,8 @@ function setAvatar(key) {
   camYaw = 0; targetCamYaw = 0;
   camPitch = IS_MOBILE ? 0.34 : 0.42; targetCamPitch = camPitch;
   targetFov = 52; fov = 52;
-  avatarDist = AVATAR_MAX_DIST;
-  targetAvatarDist = AVATAR_MAX_DIST;
+  avatarDist = AVATAR_START_DIST;
+  targetAvatarDist = AVATAR_START_DIST;
   clearViewButtons();
   const head = avatarHead();
   const p = followCameraPos(head);
@@ -3483,9 +3487,18 @@ function updateAvatarCamera(dt) {
   avatarDist += (targetAvatarDist - avatarDist) * k;
   stepAvatar(dt);
   const head = avatarHead();
-  const p = followCameraPos(head);
+  const skyAge = resetSkyDur - resetSkyT;
+  const skyCue = resetSkyT > 0 ? smoothstep(0, 0.7, skyAge) * smoothstep(0, 1.2, resetSkyT) : 0;
+  const cinePull = avatarKey !== 'camera' ? Math.max(duoAura, skyCue) : 0;
+  const assist = cinePull * (cineManual ? 0.22 : 1);
+  const baseDist = assist > 0.001 ? Math.max(avatarDist, AVATAR_START_DIST) : avatarDist;
+  const camDist = Math.min(AVATAR_MAX_DIST, baseDist + assist * 7);
+  const camPitchEff = Math.max(0.08, camPitch - assist * 0.16);
+  const p = followCameraPos(head, camDist, camPitchEff);
   camera.position.lerp(p, 1 - Math.exp(-dt * 9));
-  camera.lookAt(avatarLookTarget(head));
+  const look = avatarLookTarget(head, assist * 1.4);
+  if (assist > 0.001) look.lerp(new THREE.Vector3(0, 6.6, -5.5), assist * 0.8);
+  camera.lookAt(look);
   if (Math.abs(camera.fov - fov) > 0.002) {
     camera.fov = fov;
     camera.updateProjectionMatrix();
@@ -3682,7 +3695,7 @@ canvas.addEventListener('pointermove', (e) => {
     const [a, b] = [...pointers.values()];
     const d = Math.hypot(a.x - b.x, a.y - b.y);
     if (pinchDist > 10) {
-      if (avatarKey !== 'camera') targetAvatarDist = clamp(pinchAvatarDist * (pinchDist / Math.max(20, d)), AVATAR_MIN_DIST, AVATAR_MAX_DIST);
+      if (avatarKey !== 'camera') { cineManual = true; targetAvatarDist = clamp(pinchAvatarDist * (pinchDist / Math.max(20, d)), AVATAR_MIN_DIST, AVATAR_MAX_DIST); }
       else targetFov = clamp(pinchFov * (pinchDist / Math.max(20, d)), 34, 90);
     }
     return;
@@ -3692,6 +3705,7 @@ canvas.addEventListener('pointermove', (e) => {
   lastX = e.clientX; lastY = e.clientY;
   dragMoved += Math.abs(dx) + Math.abs(dy);
   if (avatarKey !== 'camera') {
+    cineManual = true;
     targetCamYaw -= dx * 0.0031;
     targetCamPitch = clamp(targetCamPitch + dy * 0.0026, 0.1, 1.05);
   } else {
@@ -3722,6 +3736,7 @@ canvas.addEventListener('dblclick', (e) => {
 canvas.addEventListener('wheel', (e) => {
   e.preventDefault();
   if (avatarKey !== 'camera') {
+    cineManual = true;
     targetAvatarDist = clamp(targetAvatarDist + Math.sign(e.deltaY) * 1.0, AVATAR_MIN_DIST, AVATAR_MAX_DIST);
   } else {
     targetFov = clamp(targetFov + Math.sign(e.deltaY) * 3.2, 34, 90);
@@ -3862,6 +3877,10 @@ window.__bw = {
   duoRings() { return DUO_RINGS.map((r) => ({ key: r.key, x: r.x, z: r.z })); },
   triggerDuo() { triggerDuoRitual(); },
   get avatarDist() { return +avatarDist.toFixed(2); },
+  get camDist() {
+    if (avatarKey === 'camera') return null;
+    return +camera.position.distanceTo(avatarHead()).toFixed(2);
+  },
   project(x, z, y = 0) {
     const v = new THREE.Vector3(x, y, z);
     v.project(camera);

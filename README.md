@@ -8,11 +8,11 @@ A standalone, interactive 3D Halloween hollow you can open in the browser.
 ## Controls
 
 - Arrow keys / WASD move the camera (forward / back along the view, strafe left / right)
-- Drag to orbit; scroll or pinch to zoom. Free camera: FOV 34–90°. Character mode: the follow camera dollies between 6.5 and 14.5 m. Pinch in / scroll down zooms out; pinch out / scroll up zooms in. Double-click resets the camera on desktop; touch uses the view presets
+- Drag to orbit; scroll or pinch to zoom. Free camera: FOV 34–90°. Character mode: the follow camera dollies between 6.5 and 24 m. Pinch in / scroll down zooms out; pinch out / scroll up zooms in. Double-click resets the camera on desktop; touch uses the view presets
 - Time presets: Day / Sunset / Night · Weather presets: Clear / Drift / Overcast / Drizzle / Storm (15 independent combinations)
 - God view: rise above the hollow and return exactly to the previous camera
 - Auto-orbit toggle; paused by drag, movement and god view
-- Character group: Camera / TIBO / Potato Sister. As a mascot, arrows/WASD walk; walk near the eight AI lanterns to collect sigils (gold diamonds). Selecting a mascot starts the follow camera at the farthest 14.5 m; scroll or pinch to bring it closer
+- Character group: Camera / TIBO / Potato Sister. As a mascot, arrows/WASD walk; walk near the eight AI lanterns to collect sigils (gold diamonds). Selecting a mascot starts the follow camera at 14.5 m; scroll or pinch between 6.5 and 24 m. During the duo ritual and whenever a Reset万岁 banner rises it automatically pulls back to about 21.5 m and gently tilts up so the banner stays in frame, then returns to your saved zoom; a manual drag or zoom immediately takes over the automatic framing
 - Reset: press `E` near the giant button, press `R` anywhere, click/tap the red dome, or use the **RESET** button in the control panel. Every reset sends a glowing **Reset万岁 / LONG LIVE RESET** banner rising into the sky; collecting all 8 sigils first raises a larger, longer one for the full "reset all" finale
 - Hide HUD: use the **Hide HUD / 隐藏 HUD** button at the top-right; it stays visible and becomes **Show HUD** so you can bring the interface back. On the public landing the host promo bar, focus hint and credit line hide with the HUD too. Nothing auto-restores it
 - Mobile: select TIBO or Potato Sister, then tap the ground to walk (a gold ring marks the target); drag to orbit, pinch to zoom. Double-tap camera reset is disabled on touch so repeated taps keep walking; use the view presets instead. On very small screens, hide the HUD first for more room
