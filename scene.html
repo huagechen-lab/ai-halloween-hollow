@@ -47,7 +47,7 @@
     -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
   }
   #app { position: fixed; inset: 0; }
-  #app canvas { display: block; width: 100%; height: 100%; }
+  #app canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 
   /* ── atmosphere veils ─────────────────────────────────────── */
   .veil { position: fixed; inset: 0; pointer-events: none; z-index: 3; }
@@ -2332,8 +2332,8 @@ const BUBBLES = {
 
 const BUBBLES_MOBILE = {
   zh: {
-    tiboIntro: '我是 TIBO。点地面移动，捏合缩放，集齐 8 枚灯印。',
-    potatoIntro: '土豆姐：点地面走动，捏合缩放，收回 8 枚灯印。',
+    tiboIntro: '我是 TIBO。点地面移动，双指捏合拉远，集齐 8 枚灯印。',
+    potatoIntro: '土豆姐：点地面走动，双指捏合拉远，收回 8 枚灯印。',
     collect0: '灯印 +1。继续。',
     collect1: '额度回充中。',
     collect2: '下一盏在等你。',
@@ -2344,8 +2344,8 @@ const BUBBLES_MOBILE = {
     far: '走近按钮再按 E。',
   },
   en: {
-    tiboIntro: 'TIBO here. Tap the ground to walk; pinch to zoom; collect 8 sigils.',
-    potatoIntro: 'Potato: tap the ground to walk; pinch to zoom; bring back 8 sigils.',
+    tiboIntro: 'TIBO here. Tap to walk; pinch in to pull back; collect 8 sigils.',
+    potatoIntro: 'Potato: tap to walk; pinch in to pull back; bring back 8 sigils.',
     collect0: 'Sigil +1. Keep going.',
     collect1: 'Quota recharging.',
     collect2: 'Next lantern awaits.',
@@ -2719,9 +2719,9 @@ function setAvatar(key) {
       updatePointScale();
       const cp = Math.cos(pitch);
       camera.lookAt(
-        panX + Math.sin(yaw) * cp * 20,
-        panY + Math.sin(pitch) * 20,
-        CAM_Z + panZ - Math.cos(yaw) * cp * 20
+        savedAvatarCam.pos.x + Math.sin(yaw) * cp * 20,
+        savedAvatarCam.pos.y + Math.sin(pitch) * 20,
+        savedAvatarCam.pos.z - Math.cos(yaw) * cp * 20
       );
     }
     orbitBtn.removeAttribute('aria-disabled');
@@ -3027,7 +3027,7 @@ canvas.addEventListener('pointermove', (e) => {
     const d = Math.hypot(a.x - b.x, a.y - b.y);
     if (pinchDist > 10) {
       if (avatarKey !== 'camera') targetAvatarDist = clamp(pinchAvatarDist * (pinchDist / Math.max(20, d)), AVATAR_MIN_DIST, AVATAR_MAX_DIST);
-      else targetFov = clamp(pinchFov * (pinchDist / Math.max(20, d)), 34, 82);
+      else targetFov = clamp(pinchFov * (pinchDist / Math.max(20, d)), 34, 90);
     }
     return;
   }
@@ -3068,7 +3068,7 @@ canvas.addEventListener('wheel', (e) => {
   if (avatarKey !== 'camera') {
     targetAvatarDist = clamp(targetAvatarDist + Math.sign(e.deltaY) * 1.0, AVATAR_MIN_DIST, AVATAR_MAX_DIST);
   } else {
-    targetFov = clamp(targetFov + Math.sign(e.deltaY) * 3.2, 34, 82);
+    targetFov = clamp(targetFov + Math.sign(e.deltaY) * 3.2, 34, 90);
   }
 }, { passive: false });
 
