@@ -46,7 +46,7 @@ CC BY-NC 4.0 — non-commercial reuse with attribution; commercial use requires
 a license. Copy-ready attribution, HTML snippet and commercial licensing:
 [credit.html](https://huagechen-lab.github.io/ai-halloween-hollow/credit.html).
 
-- Scene: **孙小画** · [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) · generated with **Qoder Agent**
+- Scene: **孙小画** · [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) · generated with **DeepSeek V4.1 Flash 1017**
 - Landing page and metadata: © 2026 BillionWorlds, all rights reserved
 
 See [LICENSE](./LICENSE) for the code/content split and terms.
