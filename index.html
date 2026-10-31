@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script>
+(function () {
+  var KEY = 'ai-halloween-lang';
+  function pick() {
+    try {
+      var q = new URLSearchParams(location.search).get('lang');
+      var s = null;
+      try { s = localStorage.getItem(KEY); } catch (e) { /* storage may be disabled */ }
+      var raw = q || s;
+      if (!raw) {
+        var list = navigator.languages || [navigator.language || 'en'];
+        for (var i = 0; i < list.length; i++) {
+          if (/^(zh|en)/i.test(list[i])) { raw = list[i]; break; }
+        }
+      }
+      return /^zh/i.test(raw || '') ? 'zh' : 'en';
+    } catch (e) { return 'zh'; }
+  }
+  document.documentElement.lang = pick() === 'zh' ? 'zh-CN' : 'en';
+  window.__aiToggleLang = function () {
+    var next = document.documentElement.lang === 'en' ? 'zh' : 'en';
+    document.documentElement.lang = next === 'zh' ? 'zh-CN' : 'en';
+    try { localStorage.setItem(KEY, next); } catch (e) { /* storage may be disabled */ }
+    try { window.dispatchEvent(new Event('aihalloweenlang')); } catch (e) { /* older browser */ }
+  };
+  document.addEventListener('click', function (e) {
+    var el = e.target;
+    var btn = el && el.closest ? el.closest('#lang') : null;
+    if (!btn) return;
+    e.preventDefault();
+    window.__aiToggleLang();
+  }, true);
+})();
+</script>
+<title>AI 万圣夜 · 浏览器里的 3D 世界</title>
+<meta name="description" content="在浏览器里探索 AI 万圣夜：8 盏风格化 AI 意象南瓜灯、掌管重置的机器人 TIBO 与土豆姐，3 时段 × 5 天气；操控角色收集灯印，按下巨型 RESET 触发全员重置。单个 HTML、程序化 3D。CC BY-NC 4.0，非官方同人致敬。">
+<meta name="license" content="CC BY-NC 4.0">
+<meta name="theme-color" content="#0b0a14">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://huagechen-lab.github.io/ai-halloween-hollow/">
+<link rel="icon" type="image/svg+xml" href="./favicon.svg">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BillionWorlds">
+<meta property="og:url" content="https://huagechen-lab.github.io/ai-halloween-hollow/">
+<meta property="og:title" content="AI Halloween Hollow · AI 万圣夜 — a 3D world in your browser">
+<meta property="og:description" content="Eight stylized AI lanterns, TIBO the reset robot and Potato Sister in a misty Halloween hollow. Collect sigils, hit the giant RESET button. One HTML file, procedural 3D. CC BY-NC 4.0, unofficial fan-art homage.">
+<meta property="og:image" content="https://huagechen-lab.github.io/ai-halloween-hollow/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="AI Halloween Hollow — glowing AI lanterns, TIBO and a giant reset button in a misty hollow">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:locale:alternate" content="en_US">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@huagechen">
+<meta name="twitter:creator" content="@huagechen">
+<meta name="twitter:title" content="AI Halloween Hollow · AI 万圣夜">
+<meta name="twitter:description" content="AI lanterns, TIBO the reset robot and Potato Sister in a misty hollow. Collect sigils, hit the giant RESET button. One HTML file. CC BY-NC 4.0.">
+<meta name="twitter:image" content="https://huagechen-lab.github.io/ai-halloween-hollow/og.jpg">
+<meta name="twitter:image:alt" content="AI Halloween Hollow — glowing AI lanterns and a giant reset button">
+
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html[lang="en"] .lang-zh { display: none !important; }
+  html:not([lang="en"]) .lang-en { display: none !important; }
+  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #0b0a14; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif; color: #f4efe4; }
+  iframe { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; display: block; background: #0b0a14; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+  .promo {
+    position: fixed; top: 14px; left: 50%; transform: translateX(-50%); z-index: 10;
+    display: flex; align-items: center; gap: 6px; padding: 7px;
+    border-radius: 999px; border: 1px solid rgba(226,214,168,.24);
+    background: rgba(10,12,20,.62); backdrop-filter: blur(12px) saturate(1.1);
+    -webkit-backdrop-filter: blur(12px) saturate(1.1);
+    box-shadow: 0 8px 28px rgba(0,0,0,.35);
+    font-size: 12px; line-height: 1; white-space: nowrap; pointer-events: none;
+  }
+  .promo a {
+    pointer-events: auto; display: inline-flex; align-items: center; gap: 5px;
+    border-radius: 999px; padding: 8px 11px; text-decoration: none; font-weight: 600;
+    letter-spacing: .04em; transition: transform .18s, background .18s, border-color .18s;
+  }
+  .promo a:hover { transform: translateY(-1px); }
+  .lang {
+    pointer-events: auto; display: inline-flex; align-items: center; justify-content: center;
+    min-width: 34px; height: 30px; padding: 0 8px; border-radius: 999px;
+    border: 1px solid rgba(226,214,168,.22); background: rgba(34,26,38,.35);
+    color: #f0e8d8; font: inherit; font-size: 11px; font-weight: 600; letter-spacing: .04em;
+    cursor: pointer; transition: background .18s, border-color .18s;
+  }
+  .lang:hover { background: rgba(58,42,52,.6); border-color: rgba(226,214,168,.5); }
+  .ghost { color: #f0e8d8; border: 1px solid rgba(226,214,168,.26); background: rgba(34,26,38,.42); }
+  .ghost:hover { background: rgba(58,42,52,.62); border-color: rgba(226,214,168,.5); }
+  .share { color: #f0e8d8; border: 1px solid rgba(226,214,168,.26); background: rgba(34,26,38,.42); }
+  .share:hover { background: rgba(58,42,52,.62); border-color: rgba(226,214,168,.5); }
+  .cta { color: #1a0f0b; background: #e2d6a8; }
+  .cta:hover { background: #f4ecd2; }
+
+  .kbd-hint {
+    position: fixed; top: 66px; left: 50%; transform: translateX(-50%); z-index: 12;
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 14px; border-radius: 999px; border: 1px solid rgba(255,154,82,.55);
+    background: rgba(10,12,20,.74); color: #f7f0e2;
+    font: 600 11px/1 var(--sans, -apple-system, BlinkMacSystemFont, "PingFang SC", system-ui, sans-serif);
+    letter-spacing: .08em; cursor: pointer; backdrop-filter: blur(12px);
+    box-shadow: 0 8px 24px rgba(0,0,0,.35);
+  }
+  .kbd-hint::before {
+    content: ""; width: 7px; height: 7px; border-radius: 50%;
+    background: #ff9a52; box-shadow: 0 0 10px rgba(255,154,82,.8);
+  }
+  .kbd-hint[hidden] { display: none; }
+  .kbd-hint:hover { border-color: #ffb27a; background: rgba(24,16,20,.8); }
+  .kbd-hint:focus-visible { outline: 2px solid rgba(226,214,168,.9); outline-offset: 2px; }
+
+  .credit {
+    position: fixed; bottom: 5px; left: 50%; transform: translateX(-50%); z-index: 9;
+    margin: 0; font-size: 8.5px; letter-spacing: .12em; color: rgba(226,214,168,.52);
+    text-shadow: 0 1px 8px rgba(0,0,0,.55); pointer-events: none; white-space: nowrap;
+  }
+  .credit a { pointer-events: auto; color: inherit; }
+
+  #load {
+    position: fixed; inset: 0; z-index: 20; display: grid; place-items: center;
+    background: #0b0a14; color: rgba(244,239,228,.8); font-size: 12px; letter-spacing: .22em;
+    transition: opacity .7s ease, visibility .7s ease;
+  }
+  #load span { display: block; margin-top: 10px; font-size: 9px; letter-spacing: .18em; color: rgba(226,214,168,.55); }
+  body.ready #load { opacity: 0; visibility: hidden; }
+
+  @media (max-width: 1100px) {
+    .promo { top: 132px; gap: 5px; padding: 5px 6px; font-size: 11px; }
+    .promo a { padding: 7px 9px; }
+    .kbd-hint { top: 188px; font-size: 10px; padding: 7px 11px; }
+  }
+  @media (max-width: 760px) {
+    .credit { display: none; }
+  }
+  @media (max-width: 460px) {
+    .promo .share { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<h1 class="sr-only"><span class="lang-zh">AI 万圣夜 · 可交互三维世界</span><span class="lang-en">AI Halloween Hollow — interactive 3D world</span></h1>
+<p class="sr-only"><span class="lang-zh">程序化生成的 AI 万圣夜：8 盏风格化 AI 意象南瓜灯、掌管重置的机器人 TIBO、土豆姐、南瓜田、老宅与低雾，3 时段 × 5 天气，可操控角色收集灯印并触发巨型 RESET。单个 HTML 文件，CC BY-NC 4.0，非官方同人致敬。</span><span class="lang-en">A procedural AI Halloween hollow: eight stylized AI lanterns, TIBO the reset robot, Potato Sister, pumpkin patch, cottage and mist, 15 time × weather combinations, playable mascots and a giant RESET button. One HTML file. CC BY-NC 4.0, unofficial fan-art homage.</span></p>
+
+<iframe data-src="./scene.html" title="AI 万圣夜可交互 3D 场景" sandbox="allow-scripts" allow="fullscreen" allowfullscreen loading="eager"></iframe>
+
+<button class="kbd-hint" type="button" id="kbd-hint">
+  <span class="lang-zh">点击画面启用键盘</span><span class="lang-en">Click the scene for keyboard</span>
+</button>
+
+<div class="promo" role="group" aria-label="AI 万圣夜链接">
+  <button class="lang" id="lang" type="button" aria-label="Switch language / 切换语言"><span class="lang-zh">EN</span><span class="lang-en">中文</span></button>
+  <a class="ghost" href="https://github.com/huagechen-lab/ai-halloween-hollow" target="_blank" rel="noopener">GitHub</a>
+  <a class="ghost" href="./credit.html"><span class="lang-zh">授权</span><span class="lang-en">License</span></a>
+  <a class="share" id="share" href="https://twitter.com/intent/tweet?text=AI%20Halloween%20Hollow%20%E2%80%94%20a%20playable%203D%20world%20in%20one%20HTML%20file.&url=https%3A%2F%2Fhuagechen-lab.github.io%2Fai-halloween-hollow%2F&via=huagechen" target="_blank" rel="noopener"><span class="lang-zh">分享</span><span class="lang-en">Share</span></a>
+  <a class="cta" href="https://x.com/huagechen" target="_blank" rel="me noopener"><span class="lang-zh">关注</span><span class="lang-en">Follow</span></a>
+</div>
+
+<p class="credit"><span class="lang-zh">场景：</span><span class="lang-en">Scene: </span>孙小画 · <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a> · <span class="lang-zh">非官方同人致敬</span><span class="lang-en">unofficial fan-art homage</span> · <span class="lang-zh">Qoder Agent 生成</span><span class="lang-en">generated with Qoder Agent</span></p>
+
+<div id="load">LOADING AI HOLLOW<span><span class="lang-zh">AI 万圣夜 · 一句话，一个 HTML 文件</span><span class="lang-en">AI HALLOWEEN HOLLOW · ONE PROMPT, ONE HTML FILE</span></span></div>
+
+<noscript>
+  <p style="position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:32px;text-align:center;background:#0b0a14;color:#e9dfc7">
+    <span class="lang-zh">这个 3D 场景需要启用 JavaScript。关注 <a href="https://x.com/huagechen" style="color:#f4d29a">@huagechen</a>，继续看「一句话一个世界」。</span><span class="lang-en">This interactive scene needs JavaScript. Follow <a href="https://x.com/huagechen" style="color:#f4d29a">@huagechen</a> for more one-prompt 3D worlds.</span>
+  </p>
+</noscript>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "CreativeWork",
+  "name": "AI Halloween Hollow · AI 万圣夜",
+  "description": "A procedural AI Halloween hollow with eight stylized non-official AI lanterns, original mascots TIBO and Potato Sister, 15 time × weather combinations and a playable sigil-and-reset loop; a single-file Three.js scene generated with Qoder Agent.",
+  "url": "https://huagechen-lab.github.io/ai-halloween-hollow/",
+  "image": "https://huagechen-lab.github.io/ai-halloween-hollow/og.jpg",
+  "author": { "@type": "Person", "name": "孙小画" },
+  "license": "https://creativecommons.org/licenses/by-nc/4.0/",
+  "isAccessibleForFree": true,
+  "genre": "Interactive 3D scene",
+  "keywords": "AI, Halloween, Three.js, procedural 3D, interactive, fan art",
+  "about": { "@type": "SoftwareApplication", "name": "Qoder Agent", "applicationCategory": "3D" }
+}
+</script>
+
+<script>
+(function () {
+  var frame = document.querySelector('iframe[data-src]');
+  var hint = document.getElementById('kbd-hint');
+  var share = document.getElementById('share');
+  var meta = document.querySelector('meta[name="description"]');
+  var promo = document.querySelector('.promo');
+  var URL_CANON = 'https://huagechen-lab.github.io/ai-halloween-hollow/';
+  var T = {
+    zh: {
+      title: 'AI 万圣夜 · 浏览器里的 3D 世界',
+      desc: '在浏览器里探索 AI 万圣夜：8 盏风格化 AI 意象南瓜灯、掌管重置的机器人 TIBO 与土豆姐，3 时段 × 5 天气；操控角色收集灯印，按下巨型 RESET 触发全员重置。单个 HTML、程序化 3D。CC BY-NC 4.0，非官方同人致敬。',
+      frame: 'AI 万圣夜可交互 3D 场景',
+      promo: 'AI 万圣夜链接',
+      shareText: '把 AI 万圣夜做成能逛的 3D 世界：8 盏 AI 灯、TIBO 的重置按钮，一个 HTML 文件。'
+    },
+    en: {
+      title: 'AI Halloween Hollow — a 3D world in your browser',
+      desc: 'Explore an AI Halloween hollow in your browser: eight stylized non-official AI lanterns, TIBO the reset robot and Potato Sister, 15 time × weather combinations, a sigil-collecting loop and a giant RESET button. One HTML file, procedural 3D. CC BY-NC 4.0, unofficial fan-art homage.',
+      frame: 'AI Halloween Hollow interactive 3D scene',
+      promo: 'AI Halloween Hollow links',
+      shareText: 'AI Halloween Hollow — a playable 3D world with AI lanterns and a giant reset button, in one HTML file.'
+    }
+  };
+  function lang() { return document.documentElement.lang === 'en' ? 'en' : 'zh'; }
+  function setUI() {
+    var t = T[lang()];
+    document.title = t.title;
+    if (meta) meta.setAttribute('content', t.desc);
+    if (frame) frame.title = t.frame;
+    if (promo) promo.setAttribute('aria-label', t.promo);
+    if (share) share.href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(t.shareText) + '&url=' + encodeURIComponent(URL_CANON) + '&via=huagechen';
+  }
+  function sendLang() {
+    if (frame && frame.contentWindow) {
+      frame.contentWindow.postMessage({ type: 'bw-lang', lang: lang() }, '*');
+    }
+  }
+  function ready() { document.body.classList.add('ready'); }
+  setUI();
+  if (frame) {
+    frame.src = frame.getAttribute('data-src') + '?lang=' + (lang() === 'en' ? 'en' : 'zh');
+    frame.addEventListener('load', function () { setTimeout(ready, 700); sendLang(); });
+    setTimeout(ready, 6000);
+    function syncHint() { if (hint) hint.hidden = document.activeElement === frame; }
+    if (hint) hint.addEventListener('click', function () { frame.focus(); syncHint(); });
+    window.addEventListener('blur', function () { setTimeout(syncHint, 0); });
+    window.addEventListener('focus', syncHint);
+    setInterval(syncHint, 800);
+    syncHint();
+  }
+  window.addEventListener('aihalloweenlang', function () { setUI(); sendLang(); });
+})();
+</script>
+</body>
+</html>

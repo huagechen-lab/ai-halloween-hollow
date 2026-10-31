@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+(function () {
+  var KEY = 'ai-halloween-lang';
+  function pick() {
+    try {
+      var q = new URLSearchParams(location.search).get('lang');
+      var s = null;
+      try { s = localStorage.getItem(KEY); } catch (e) { /* storage may be disabled */ }
+      var raw = q || s;
+      if (!raw) {
+        var list = navigator.languages || [navigator.language || 'en'];
+        for (var i = 0; i < list.length; i++) {
+          if (/^(zh|en)/i.test(list[i])) { raw = list[i]; break; }
+        }
+      }
+      return /^zh/i.test(raw || '') ? 'zh' : 'en';
+    } catch (e) { return 'zh'; }
+  }
+  document.documentElement.lang = pick() === 'zh' ? 'zh-CN' : 'en';
+})();
+</script>
+<title>授权与署名 · AI 万圣夜</title>
+<script>
+(function () {
+  document.title = document.documentElement.lang === 'en'
+    ? 'License & credit · AI Halloween Hollow · CC BY-NC 4.0'
+    : '授权与署名 · AI 万圣夜';
+})();
+</script>
+<meta name="description" content="How to credit and reuse AI Halloween Hollow: copy-ready attribution, non-commercial CC BY-NC 4.0 terms, fan-art disclaimer, press image and commercial licensing contact.">
+<meta name="license" content="CC BY-NC 4.0">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#0b0a14">
+<link rel="canonical" href="https://huagechen-lab.github.io/ai-halloween-hollow/credit.html">
+<link rel="icon" type="image/svg+xml" href="./favicon.svg">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="BillionWorlds">
+<meta property="og:url" content="https://huagechen-lab.github.io/ai-halloween-hollow/credit.html">
+<meta property="og:title" content="License & credit · 授权与署名 · AI Halloween Hollow">
+<meta property="og:description" content="Copy-ready attribution, CC BY-NC 4.0 terms, fan-art disclaimer and commercial licensing for AI Halloween Hollow.">
+<meta property="og:image" content="https://huagechen-lab.github.io/ai-halloween-hollow/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@huagechen">
+<meta name="twitter:creator" content="@huagechen">
+<meta name="twitter:title" content="License & credit · AI Halloween Hollow · CC BY-NC 4.0">
+<meta name="twitter:description" content="Copy-ready attribution, CC BY-NC 4.0 terms and commercial licensing for AI Halloween Hollow.">
+<meta name="twitter:image" content="https://huagechen-lab.github.io/ai-halloween-hollow/og.jpg">
+<style>
+  html[lang="en"] .lang-zh { display: none !important; }
+  html:not([lang="en"]) .lang-en { display: none !important; }
+  :root { color-scheme: dark; --ink:#f4efe4; --muted:#b9a893; --line:rgba(226,214,168,.16); --gold:#e2d6a8; --orange:#ff9a5c; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0b0a14; }
+  body {
+    background:
+      radial-gradient(900px 540px at 8% -10%, rgba(217,72,47,.16), transparent 62%),
+      radial-gradient(800px 500px at 100% 8%, rgba(226,214,168,.08), transparent 60%),
+      linear-gradient(180deg, #0b0a14, #12101b 60%, #0b0a14);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+    line-height: 1.7;
+  }
+  a { color: #f4d29a; text-decoration: none; }
+  a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .shell { width: min(920px, calc(100% - 36px)); margin: 0 auto; padding: 26px 0 64px; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 22px; }
+  .back { font-size: 12px; letter-spacing: .06em; color: var(--muted); }
+  .back:hover { color: var(--ink); text-decoration: none; }
+  .lang {
+    display: inline-flex; align-items: center; justify-content: center; min-width: 46px; height: 32px;
+    padding: 0 10px; border-radius: 999px; border: 1px solid rgba(226,214,168,.24);
+    background: rgba(34,26,38,.45); color: #f0e8d8; font: inherit; font-size: 11px; font-weight: 650;
+    letter-spacing: .04em; cursor: pointer;
+  }
+  .lang:hover { background: rgba(58,42,52,.62); border-color: rgba(226,214,168,.5); }
+  .eyebrow { margin: 0 0 8px; font-size: 10px; letter-spacing: .26em; color: var(--gold); text-transform: uppercase; }
+  h1 { margin: 0; font-size: clamp(30px, 5vw, 54px); line-height: 1.08; letter-spacing: -.015em; font-weight: 680; }
+  .lead { margin: 14px 0 0; max-width: 720px; color: var(--muted); font-size: 14px; }
+  .rule { height: 1px; background: var(--line); margin: 28px 0; }
+  h2 { margin: 0 0 8px; font-size: 15px; letter-spacing: .02em; }
+  p { margin: 0 0 10px; }
+  .muted { color: var(--muted); font-size: 12.5px; }
+  .badge { display: inline-flex; align-items: center; gap: 6px; margin: 14px 0 0; padding: 6px 10px; border: 1px solid rgba(255,154,82,.4); border-radius: 999px; background: rgba(64,28,16,.32); color: #ffd2a8; font-size: 10px; letter-spacing: .12em; }
+  .grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 18px; align-items: start; }
+  .card { border: 1px solid var(--line); border-radius: 16px; background: rgba(255,255,255,.028); padding: 18px; }
+  .card + .card { margin-top: 14px; }
+  .card h2 { color: #fbf3e2; }
+  .copy-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 12px 0 0; }
+  pre {
+    margin: 0; padding: 14px 15px; border-radius: 12px; border: 1px solid rgba(226,214,168,.14);
+    background: rgba(8,6,12,.6); color: #efe5d2; font: 12px/1.65 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    white-space: pre-wrap; overflow-wrap: anywhere;
+  }
+  .copy {
+    flex: none; border: 1px solid rgba(226,214,168,.28); background: rgba(48,32,32,.55); color: #fff3dd;
+    border-radius: 999px; padding: 7px 11px; font: inherit; font-size: 11px; font-weight: 650; cursor: pointer;
+  }
+  .copy:hover { background: rgba(72,46,40,.8); border-color: rgba(226,214,168,.55); }
+  ul { margin: 8px 0 0; padding-left: 20px; color: var(--muted); font-size: 12.5px; }
+  li { margin: 5px 0; }
+  .actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 14px; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; border-radius: 999px;
+    padding: 9px 14px; border: 1px solid rgba(226,214,168,.28); color: #fff3dd;
+    background: rgba(48,32,32,.55); font-size: 12px; font-weight: 650; letter-spacing: .02em;
+  }
+  .btn:hover { background: rgba(72,46,40,.8); text-decoration: none; }
+  .btn.primary { background: #e2d6a8; color: #1a0f0b; border-color: #e2d6a8; }
+  .btn.primary:hover { background: #f4ecd2; }
+  footer { margin-top: 30px; padding-top: 16px; border-top: 1px solid var(--line); color: rgba(200,180,150,.62); font-size: 11px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; }
+  @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } .shell { padding-top: 18px; } }
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="topbar">
+    <a class="back" href="./"><span class="lang-zh">← 返回 3D 世界</span><span class="lang-en">← Back to the 3D world</span></a>
+    <button class="lang" id="lang" type="button" aria-label="Switch language / 切换语言"><span class="lang-zh">EN</span><span class="lang-en">中文</span></button>
+  </div>
+
+  <p class="eyebrow">AI Halloween Hollow · License &amp; credit</p>
+  <h1><span class="lang-zh">授权与署名</span><span class="lang-en">License &amp; credit</span></h1>
+  <p class="lead lang-zh">这个场景以 <strong>CC BY-NC 4.0</strong> 发布：可以非商业分享、修改，但必须署名；<strong>商用必须联系作者获取授权</strong>。下面是可以直接复制的署名文本和授权说明。</p>
+  <p class="lead lang-en">This scene is published under <strong>CC BY-NC 4.0</strong>: you may share and adapt it for non-commercial purposes with attribution. <strong>Commercial use requires a separate license.</strong></p>
+  <p class="badge"><span class="lang-zh">非商用 · 商用需授权</span><span class="lang-en">NON-COMMERCIAL · LICENSE REQUIRED</span></p>
+
+  <div class="rule"></div>
+
+  <div class="grid">
+    <div>
+      <div class="card">
+        <h2><span class="lang-zh">最短署名</span><span class="lang-en">Short credit</span></h2>
+        <p class="muted lang-zh">适合视频简介、推文、卡片角落。</p>
+        <p class="muted lang-en">For video descriptions, posts or a small caption.</p>
+        <div class="copy-row">
+          <button class="copy" type="button" data-copy="#credit-short"><span class="lang-zh">复制</span><span class="lang-en">Copy</span></button>
+        </div>
+        <pre id="credit-short">AI Halloween Hollow · 孙小画 · CC BY-NC 4.0 (https://creativecommons.org/licenses/by-nc/4.0/) · https://huagechen-lab.github.io/ai-halloween-hollow/ · @huagechen</pre>
+      </div>
+
+      <div class="card">
+        <h2><span class="lang-zh">完整署名</span><span class="lang-en">Full credit</span></h2>
+        <p class="muted lang-zh">适合文章、转载、作品集条目。</p>
+        <p class="muted lang-en">For articles, reposts or portfolio entries.</p>
+        <div class="copy-row">
+          <button class="copy" type="button" data-copy="#credit-full"><span class="lang-zh">复制</span><span class="lang-en">Copy</span></button>
+        </div>
+        <pre id="credit-full">“AI Halloween Hollow” by 孙小画, licensed under CC BY-NC 4.0.
+License: https://creativecommons.org/licenses/by-nc/4.0/
+Source: https://huagechen-lab.github.io/ai-halloween-hollow/
+Changes: none in the scene; the public landing and credit page are new.
+Generated with Qoder Agent.
+Follow: https://x.com/huagechen</pre>
+      </div>
+
+      <div class="card">
+        <h2><span class="lang-zh">网页用 HTML</span><span class="lang-en">HTML snippet</span></h2>
+        <p class="muted lang-zh">带链接的署名，能让读者直接回到作品页和作者主页。</p>
+        <p class="muted lang-en">A linked credit that sends readers back to the work and author.</p>
+        <div class="copy-row">
+          <button class="copy" type="button" data-copy="#credit-html"><span class="lang-zh">复制 HTML</span><span class="lang-en">Copy HTML</span></button>
+        </div>
+        <pre id="credit-html">&lt;a href="https://huagechen-lab.github.io/ai-halloween-hollow/"&gt;AI Halloween Hollow&lt;/a&gt;
+by &lt;a href="https://x.com/huagechen"&gt;孙小画&lt;/a&gt;,
+licensed under &lt;a href="https://creativecommons.org/licenses/by-nc/4.0/"&gt;CC BY-NC 4.0&lt;/a&gt;.
+Changes: none in the scene.</pre>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h2><span class="lang-zh">CC BY-NC 4.0 允许什么</span><span class="lang-en">What CC BY-NC 4.0 allows</span></h2>
+        <ul class="lang-zh">
+          <li>非商业分享、公开传播、修改、二次创作</li>
+          <li>必须署名、附许可证链接、说明修改</li>
+          <li><strong>不得商用</strong>；商用需单独取得授权</li>
+          <li>不能暗示作者为你背书</li>
+        </ul>
+        <ul class="lang-en">
+          <li>Share, repost, remix and adapt for non-commercial purposes</li>
+          <li>Credit the author, link the license, indicate changes</li>
+          <li><strong>No commercial use</strong>; a separate license is required</li>
+          <li>Do not imply endorsement by the author</li>
+        </ul>
+        <p class="muted" style="margin-top:12px">
+          <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener"><span class="lang-zh">阅读完整许可证 ↗</span><span class="lang-en">Read the full license ↗</span></a>
+        </p>
+      </div>
+
+      <div class="card">
+        <h2><span class="lang-zh">商用授权 / 白标 / 定制</span><span class="lang-en">Commercial license</span></h2>
+        <p class="lang-zh"><strong>商用不在 CC BY-NC 4.0 授权范围内。</strong>需要商用、白标、去署名、定制场景、独家使用或支持，请联系作者获取授权。</p>
+        <p class="lang-en"><strong>Commercial use is not permitted under CC BY-NC 4.0.</strong> Contact the author for a commercial license, white-label, custom scene, exclusivity or support.</p>
+        <div class="actions">
+          <a class="btn primary" href="https://x.com/huagechen" target="_blank" rel="me noopener"><span class="lang-zh">私信 @huagechen</span><span class="lang-en">DM @huagechen</span> ↗</a>
+          <a class="btn" href="./og.jpg" download><span class="lang-zh">下载 OG 图</span><span class="lang-en">Download OG image</span></a>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="lang-zh">同人致敬与形象说明</span><span class="lang-en">Fan-art &amp; likeness</span></h2>
+        <p class="lang-zh">本作是非官方同人致敬。所有 AI 品牌意象均为程序化抽象图案，不使用官方 Logo、字标或原作画面；TIBO 与土豆姐是原创吉祥物，不使用真人肖像。与 OpenAI 及任何公司或个人无关联，也未获其背书。</p>
+        <p class="lang-en">This is an unofficial fan-art homage. All AI-brand-like motifs are abstract, procedural designs; no official logos, wordmarks or exact brand artwork are used. TIBO and Potato Sister are original mascot characters; no real-person likeness is used. Not affiliated with or endorsed by OpenAI or any company or person.</p>
+      </div>
+
+      <div class="card">
+        <h2><span class="lang-zh">稳定来源</span><span class="lang-en">Canonical source</span></h2>
+        <p class="muted">https://huagechen-lab.github.io/ai-halloween-hollow/</p>
+        <p class="muted"><a href="https://github.com/huagechen-lab/ai-halloween-hollow" target="_blank" rel="noopener">github.com/huagechen-lab/ai-halloween-hollow ↗</a></p>
+        <p class="muted lang-zh">署名链接请指向这个地址；它比截图或转存更能带来回访。</p>
+        <p class="muted lang-en">Point attribution links here; it brings visitors back to the work.</p>
+      </div>
+
+      <div class="card">
+        <h2><span class="lang-zh">授权说明</span><span class="lang-en">License history</span></h2>
+        <p class="muted lang-zh">本作于 2026-10-31 首次以 CC BY-NC 4.0 公开，此前没有其他公开发布或旧许可。公开落地页、署名页与元数据由 BillionWorlds 创作，保留所有权利，不随场景一同授权。</p>
+        <p class="muted lang-en">First published 2026-10-31 under CC BY-NC 4.0. There is no earlier public release or prior license for this work. The public landing page, credit page and metadata are © 2026 BillionWorlds, all rights reserved, and are not licensed with the scene.</p>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <span>AI Halloween Hollow · 孙小画 · CC BY-NC 4.0 · Qoder Agent</span>
+    <span><a href="./">3D world ↗</a> · <a href="https://github.com/huagechen-lab/ai-halloween-hollow" target="_blank" rel="noopener">GitHub ↗</a> · <a href="https://x.com/huagechen" target="_blank" rel="me noopener">@huagechen ↗</a></span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var langBtn = document.getElementById('lang');
+  function applyTitle() {
+    document.title = document.documentElement.lang === 'en'
+      ? 'License & credit · AI Halloween Hollow · CC BY-NC 4.0'
+      : '授权与署名 · AI 万圣夜';
+  }
+  applyTitle();
+  if (langBtn) langBtn.addEventListener('click', function () {
+    var next = document.documentElement.lang === 'en' ? 'zh' : 'en';
+    document.documentElement.lang = next === 'zh' ? 'zh-CN' : 'en';
+    try { localStorage.setItem('ai-halloween-lang', next); } catch (e) { /* storage may be disabled */ }
+    applyTitle();
+  });
+
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest ? e.target.closest('.copy') : null;
+    if (!btn) return;
+    var target = document.querySelector(btn.getAttribute('data-copy'));
+    if (!target) return;
+    var text = target.innerText;
+    var old = btn.innerHTML;
+    var done = function () {
+      btn.textContent = document.documentElement.lang === 'en' ? 'Copied ✓' : '已复制 ✓';
+      setTimeout(function () { btn.innerHTML = old; }, 1400);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(done);
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); } catch (err) { /* ignore */ }
+      ta.remove();
+      done();
+    }
+  });
+})();
+</script>
+</body>
+</html>

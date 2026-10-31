@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://huagechen-lab.github.io/ai-halloween-hollow/sitemap.xml
