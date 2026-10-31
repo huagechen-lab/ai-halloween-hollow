@@ -134,6 +134,26 @@
   }
   .hud-toggle:hover { background: rgba(30, 44, 52, .6); border-color: rgba(233, 211, 164, .65); color: #fff; }
   .hud-toggle[aria-pressed="true"] { background: rgba(233, 211, 164, .9); color: #16201f; border-color: rgba(233, 211, 164, .9); }
+  .quick-avatar {
+    position: fixed; right: 26px; top: 208px; z-index: 8;
+    display: none; flex-direction: column; gap: 3px; padding: 4px;
+    border: 1px solid rgba(244, 240, 230, .22); border-radius: 12px;
+    background: rgba(8, 16, 22, .42); backdrop-filter: blur(12px);
+  }
+  .quick-avatar .quick-cap {
+    padding: 2px 4px 4px; text-align: center; color: rgba(244, 240, 230, .5);
+    font: 8px/1 var(--sans); letter-spacing: .18em; text-transform: uppercase;
+  }
+  .quick-avatar button {
+    appearance: none; border: 0; border-radius: 8px; padding: 7px 9px;
+    background: transparent; color: rgba(244, 240, 230, .72);
+    font: 600 9px/1 var(--sans); letter-spacing: .1em; cursor: pointer;
+    transition: background .2s, color .2s;
+  }
+  .quick-avatar button:hover { background: rgba(244, 240, 230, .12); color: #fff; }
+  .quick-avatar button[aria-pressed="true"] { background: rgba(233, 211, 164, .9); color: #16201f; }
+  .quick-avatar button:focus-visible { outline: 2px solid rgba(233, 211, 164, .9); outline-offset: 2px; }
+  body.hud-hidden .quick-avatar { display: flex; }
 
   body.hud-hidden .masthead,
   body.hud-hidden .status,
@@ -333,6 +353,9 @@
     .god { top: 58px; right: 14px; padding: 8px 12px; font-size: 10.5px; }
     .lang { top: 98px; right: 14px; padding: 6px 9px; font-size: 9.5px; }
     .hud-toggle { top: 138px; right: 14px; padding: 6px 9px; font-size: 9.5px; }
+    .quick-avatar { top: 174px; right: 14px; padding: 3px; gap: 2px; }
+    .quick-avatar button { padding: 6px 8px; font-size: 9px; }
+    .quick-avatar .quick-cap { font-size: 7px; }
     .panel { left: 12px; right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); width: auto; padding: 13px 12px 10px; }
     .panel-head { margin-bottom: 10px; font-size: 12px; }
     .p-coord { display: none; }
@@ -392,6 +415,12 @@
 <button class="god" id="godBtn" type="button" aria-pressed="false">上帝视角</button>
 <button class="lang" id="langBtn" type="button" aria-label="Switch language">EN</button>
 <button class="hud-toggle" id="hudToggle" type="button" aria-pressed="false">隐藏 HUD</button>
+<div class="quick-avatar" id="quickAvatar" role="group" aria-label="控制角色 / Control character">
+  <span class="quick-cap"><span class="lang-zh">控制</span><span class="lang-en">Control</span></span>
+  <button type="button" data-avatar="camera" aria-pressed="true"><span class="lang-zh">镜头</span><span class="lang-en">Camera</span></button>
+  <button type="button" data-avatar="tibo" aria-pressed="false"><span class="lang-zh">TIBO</span><span class="lang-en">TIBO</span></button>
+  <button type="button" data-avatar="potato" aria-pressed="false"><span class="lang-zh">土豆姐</span><span class="lang-en">Potato</span></button>
+</div>
 
 <div class="season-rail" aria-hidden="true">
   <span class="rail-cn lang-zh" id="railCn">AI 南瓜谷 · 灯阵</span>
@@ -2961,7 +2990,7 @@ function avatarLookTarget(head, lift = 0) {
   return new THREE.Vector3(head.x + fx * 4.0, head.y + 0.7 + lift, head.z + fz * 4.0);
 }
 function syncAvatarButtons() {
-  $$('#avatarSeg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.avatar === avatarKey)));
+  $$('#avatarSeg button, #quickAvatar button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.avatar === avatarKey)));
 }
 
 /* ── quest helpers: speech, scoreboard, reset ─────────────── */
@@ -3789,7 +3818,7 @@ $$('#viewSeg button').forEach((b, i) => b.addEventListener('click', () => setVie
 $$('#timeSeg button').forEach((b) => b.addEventListener('click', () => setTime(b.dataset.time)));
 $$('#weatherSeg button').forEach((b) => b.addEventListener('click', () => setWeather(b.dataset.weather)));
 orbitBtn.addEventListener('click', () => { if (avatarKey !== 'camera') return; setOrbit(!UI.orbit); });
-$$('#avatarSeg button').forEach((b) => b.addEventListener('click', () => setAvatar(b.dataset.avatar)));
+$$('#avatarSeg button, #quickAvatar button').forEach((b) => b.addEventListener('click', () => setAvatar(b.dataset.avatar)));
 if (resetBtn) resetBtn.addEventListener('click', () => triggerReset('hud'));
 if (hudBtn) hudBtn.addEventListener('click', () => setHudHidden(!hudHidden));
 if (audioBtn) audioBtn.addEventListener('click', toggleMusic);
